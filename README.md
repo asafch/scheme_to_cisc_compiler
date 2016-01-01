@@ -1,0 +1,24 @@
+# Compiler Principles, final projects
+
+The objective of the final project is to create a fully functional compiler, that compiles Scheme code into a mock-up assembly code. This mock-up assembly code is just `C`-macros inside a `.c` file, which is then compiled with `gcc`. The output of the compiled `*.o` file should be the same as the output received in `Chez Scheme` when evaluating the original Scheme code input to the compiler.
+
+See [assignment description](http://www.cs.bgu.ac.il/~comp161/wiki.files/final-project.html).
+
+The compiler is implemented in [OCaml](https://ocaml.org).
+
+Parsing Combinators are used in the implementation, and the base PC functionality
+resides in `pc.ml`, which was written by Prof. Mayer Goldberg.
+
+The definition and basic files for using the mock-up assembly are also the work of Prof. Goldberg.
+
+### License
+
+The MIT License (MIT)
+
+Copyright (c) 2015 Asaf Chelouche, Avi Gurfinkel
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
