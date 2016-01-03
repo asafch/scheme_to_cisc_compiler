@@ -1,6 +1,6 @@
 /* cisc.h
  * Mock-assembly programming for a CISC-like architecture
- * 
+ *
  * Programmer: Mayer Goldberg, 2015
  */
 
@@ -20,7 +20,7 @@
 typedef struct Machine {
   long mem[RAM_SIZE];
   long stack[STACK_SIZE];
-  long r0, r1, r2, r3, r4, r5, r6, r7, 
+  long r0, r1, r2, r3, r4, r5, r6, r7,
        r8, r9, r10, r11, r12, r13, r14, r15;
   long sp, fp;
   long test_result;
@@ -96,7 +96,7 @@ extern Machine *machine;
 #define XOR(x, y) { (x) ^= (y); }
 #define NEG(x) { (x) = ~(x); }
 
-#define BEGIN_LOCAL_LABELS { __label__ 
+#define BEGIN_LOCAL_LABELS { __label__
 #define END_LOCAL_LABELS }
 
 #define CALL(subr) {			\

@@ -1318,3 +1318,44 @@ let test_parser string =
   let expr = Tag_Parser.read_expression string in
   let string' = (Tag_Parser.expression_to_string expr) in
   Printf.printf "%s\n" string';;
+
+module type CODE_GEN = sig
+  val code_gen : expr' -> string
+  val compile_scheme_file : string -> string -> unit;
+end;;
+
+module Code_Gen : CODE_GEN = struct
+
+let file_to_string input_file =
+  let in_channel = open_in input_file in
+  let rec run () =
+    try
+      let ch = input_char in_channel in ch :: (run ())
+    with End_of_file ->
+      ( close_in in_channel;
+        [] )
+  in list_to_string (run ());;
+
+let string_to_file output_file out_string =
+  let out_channel = open_out output_file in
+  ( output_string out_channel out_string;
+    close_out out_channel );;
+
+let make_make_label name =
+  let counter = ref 0
+  in
+  fun () ->
+  ( counter := !counter + 1;
+    Printf.sprintf "%s_%d" name (!counter) )
+
+let make_if_labels =
+  let make_if_else = make_make_label "L_if_else" in
+  let make_if_end = make_make_label "L_if_end" in
+  fun () ->
+  (make_if_else(), make_if_end());;
+
+let code_gen e = raise x_not_yet_implemented;;
+
+let compile_scheme_file scm_source_file asm_target_file =
+  raise x_not_yet_implemented;;
+end;;

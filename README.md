@@ -1,4 +1,4 @@
-# Compiler Principles, final projects
+# Compiler Principles, final project
 
 The objective of the final project is to create a fully functional compiler, that compiles Scheme code into a mock-up assembly code. This mock-up assembly code is just `C`-macros inside a `.c` file, which is then compiled with `gcc`. The output of the compiled `*.o` file should be the same as the output received in `Chez Scheme` when evaluating the original Scheme code input to the compiler.
 
