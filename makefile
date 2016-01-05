@@ -2,7 +2,7 @@ C:=gcc
 CFLAGS:=-o
 
 all:
-	$(C) $(CFLAGS) example example.c
+	$(C) $(CFLAGS) out out.c
 
 PHONY: .clean
 

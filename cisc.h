@@ -65,7 +65,7 @@ extern Machine *machine;
 
 /* definition of the opcodes */
 
-#define CMP(x, y) (M(test_result) = ((x) - (y)))
+#define CMP(x, y) { (M(test_result) = ((x) - (y))); }
 #define JUMP_GT(label) { if (M(test_result) > 0) goto label; }
 #define JUMP_LT(label) { if (M(test_result) < 0) goto label; }
 #define JUMP_GE(label) { if (M(test_result) >= 0) goto label; }

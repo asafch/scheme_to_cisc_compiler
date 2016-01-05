@@ -1,6 +1,6 @@
 /* cisc.c
  * Mock-assembly programming for a CISC-like architecture
- *
+ * 
  * Programmer: Mayer Goldberg, 2010
  */
 

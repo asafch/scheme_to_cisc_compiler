@@ -1321,10 +1321,44 @@ let test_parser string =
 
 module type CODE_GEN = sig
   val code_gen : expr' -> string
-  val compile_scheme_file : string -> string -> unit;
+  val compile_scheme_file : string -> string -> unit
 end;;
 
 module Code_Gen : CODE_GEN = struct
+
+exception X_why of string;;
+
+let prologue =
+  "
+#include <stdio.h>
+#include <stdlib.h>
+
+/* change to 0 for no debug info to be printed: */
+#define DO_SHOW 1
+
+#include \"cisc.h\"
+
+int main()
+{
+  START_MACHINE;
+
+  JUMP(CONTINUE);
+
+  #include \"char.lib\"
+  #include \"io.lib\"
+  #include \"math.lib\"
+  #include \"string.lib\"
+  #include \"system.lib\"
+
+ CONTINUE:
+  ";;
+
+let epilogue =
+  "
+  STOP_MACHINE;
+
+  return 0;
+}";;
 
 let file_to_string input_file =
   let in_channel = open_in input_file in
@@ -1348,14 +1382,70 @@ let make_make_label name =
   ( counter := !counter + 1;
     Printf.sprintf "%s_%d" name (!counter) )
 
-let make_if_labels =
+let make_if_else_labels =
   let make_if_else = make_make_label "L_if_else" in
+  let make_else = make_make_label "L_else" in
   let make_if_end = make_make_label "L_if_end" in
   fun () ->
-  (make_if_else(), make_if_end());;
+  (make_if_else(), make_else(), make_if_end());;
 
-let code_gen e = raise x_not_yet_implemented;;
+(* TODO make labels for all code cases *)
+
+let const_table_address = "1";;
+
+let code_gen e =
+  let rec run expr' =
+  match expr' with
+  | Const' c -> Sexpr.sexpr_to_string c
+  | Var' v ->
+    begin
+      match v with
+      | VarFree' var -> "varfree"
+      | VarParam' (var, minor) -> "varparam"
+      | VarBound' (var, major, minor) -> "varbound"
+    end
+  | BoxGet' var -> "boxget"
+  | BoxSet' (var, new_val) -> "boxset"
+  | If' (test,dit, Const' Void) ->
+    let (in_label, else_label, end_label) = make_if_else_labels () in
+    in_label ^ ":\n" ^
+    "\t" ^ (run test) ^ "\n" ^
+    "\tCMP(R0, 1)\n" ^
+    "\tJUMP_NE(" ^ else_label ^ ")\n" ^
+    "\t" ^ (run dit) ^ "\n" ^
+    "\tJUMP(" ^ end_label ^ ")\n" ^
+    else_label ^ ": \n" ^
+    "\t" ^ "MOV(R0, T_VOID)" ^ "\n" ^
+    end_label ^ ":\n\n"
+  | If' (test, dit, dif) ->
+    let (in_label, else_label, end_label) = make_if_else_labels () in
+    in_label ^ ":\n" ^
+    "\t" ^ (run test) ^ "\n" ^
+    "\tCMP(R0, 1)\n" ^
+    "\tJUMP_NE(" ^ else_label ^ ")\n" ^
+    "\t" ^ (run dit) ^ "\n" ^
+    "\tJUMP(" ^ end_label ^ ")\n" ^
+    else_label ^ ": \n" ^
+    "\t" ^ (run dif) ^ "\n" ^
+    end_label ^ ":\n\n"
+  | Seq' exprs' -> "begin"
+  | Def' (var, value) -> "define"
+  | Or' exprs' -> "or"
+  | LambdaSimple' (params, body) -> "lambda"
+  | LambdaOpt' (params, optional, body) -> "lambda opt"
+  | Applic' (operator, operands) -> "applic"
+  | ApplicTP' (operator, operands) -> "applit tp"
+  | _ -> raise (X_why "codegen")
+  in
+  run e;;
 
 let compile_scheme_file scm_source_file asm_target_file =
-  raise x_not_yet_implemented;;
+  let file_as_string = file_to_string scm_source_file in
+  let file_as_expr'_list = List.map Semantics.run_semantics
+                                    (Tag_Parser.read_expressions file_as_string) in
+  let code_as_list = List.map code_gen file_as_expr'_list in
+  let code = List.fold_right (fun code prev_code -> code ^ prev_code)
+                              code_as_list
+                              "" in
+  string_to_file asm_target_file (prologue ^ code ^ epilogue);;
 end;;
