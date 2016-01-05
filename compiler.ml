@@ -1319,12 +1319,14 @@ let test_parser string =
   let string' = (Tag_Parser.expression_to_string expr) in
   Printf.printf "%s\n" string';;
 
-module type CODE_GEN = sig
+(* module type CODE_GEN = sig
   val code_gen : expr' -> string
   val compile_scheme_file : string -> string -> unit
-end;;
+end;; *)
 
-module Code_Gen : CODE_GEN = struct
+(* module Code_Gen : CODE_GEN = struct *)
+module Code_Gen = struct
+
 
 exception X_why of string;;
 
@@ -1391,61 +1393,98 @@ let make_if_else_labels =
 
 (* TODO make labels for all code cases *)
 
-let const_table_address = "1";;
+let const_table = ref [];;
 
 let code_gen e =
   let rec run expr' =
-  match expr' with
-  | Const' c -> Sexpr.sexpr_to_string c
-  | Var' v ->
-    begin
-      match v with
-      | VarFree' var -> "varfree"
-      | VarParam' (var, minor) -> "varparam"
-      | VarBound' (var, major, minor) -> "varbound"
-    end
-  | BoxGet' var -> "boxget"
-  | BoxSet' (var, new_val) -> "boxset"
-  | If' (test,dit, Const' Void) ->
-    let (in_label, else_label, end_label) = make_if_else_labels () in
-    in_label ^ ":\n" ^
-    "\t" ^ (run test) ^ "\n" ^
-    "\tCMP(R0, 1)\n" ^
-    "\tJUMP_NE(" ^ else_label ^ ")\n" ^
-    "\t" ^ (run dit) ^ "\n" ^
-    "\tJUMP(" ^ end_label ^ ")\n" ^
-    else_label ^ ": \n" ^
-    "\t" ^ "MOV(R0, T_VOID)" ^ "\n" ^
-    end_label ^ ":\n\n"
-  | If' (test, dit, dif) ->
-    let (in_label, else_label, end_label) = make_if_else_labels () in
-    in_label ^ ":\n" ^
-    "\t" ^ (run test) ^ "\n" ^
-    "\tCMP(R0, 1)\n" ^
-    "\tJUMP_NE(" ^ else_label ^ ")\n" ^
-    "\t" ^ (run dit) ^ "\n" ^
-    "\tJUMP(" ^ end_label ^ ")\n" ^
-    else_label ^ ": \n" ^
-    "\t" ^ (run dif) ^ "\n" ^
-    end_label ^ ":\n\n"
-  | Seq' exprs' -> "begin"
-  | Def' (var, value) -> "define"
-  | Or' exprs' -> "or"
-  | LambdaSimple' (params, body) -> "lambda"
-  | LambdaOpt' (params, optional, body) -> "lambda opt"
-  | Applic' (operator, operands) -> "applic"
-  | ApplicTP' (operator, operands) -> "applit tp"
-  | _ -> raise (X_why "codegen")
-  in
+    match expr' with
+    | Const' c -> Sexpr.sexpr_to_string c
+    | Var' v ->
+      begin
+        match v with
+        | VarFree' var -> "varfree"
+        | VarParam' (var, minor) -> "varparam"
+        | VarBound' (var, major, minor) -> "varbound"
+      end
+    | BoxGet' var -> "boxget"
+    | BoxSet' (var, new_val) -> "boxset"
+    | If' (test,dit, Const' Void) ->
+      let (in_label, else_label, end_label) = make_if_else_labels () in
+      in_label ^ ":\n" ^
+      "\t" ^ (run test) ^ "\n" ^
+      "\tCMP(R0, 1)\n" ^
+      "\tJUMP_NE(" ^ else_label ^ ")\n" ^
+      "\t" ^ (run dit) ^ "\n" ^
+      "\tJUMP(" ^ end_label ^ ")\n" ^
+      else_label ^ ": \n" ^
+      "\t" ^ "MOV(R0, T_VOID)" ^ "\n" ^
+      end_label ^ ":\n\n"
+    | If' (test, dit, dif) ->
+      let (in_label, else_label, end_label) = make_if_else_labels () in
+      in_label ^ ":\n" ^
+      "\t" ^ (run test) ^ "\n" ^
+      "\tCMP(R0, 1)\n" ^
+      "\tJUMP_NE(" ^ else_label ^ ")\n" ^
+      "\t" ^ (run dit) ^ "\n" ^
+      "\tJUMP(" ^ end_label ^ ")\n" ^
+      else_label ^ ": \n" ^
+      "\t" ^ (run dif) ^ "\n" ^
+      end_label ^ ":\n\n"
+    | Seq' exprs' -> "begin"
+    | Def' (var, value) -> "define"
+    | Or' exprs' -> "or"
+    | LambdaSimple' (params, body) -> "lambda"
+    | LambdaOpt' (params, optional, body) -> "lambda opt"
+    | Applic' (operator, operands) -> "applic"
+    | ApplicTP' (operator, operands) -> "applit tp"
+    | _ -> raise (X_why "codegen")
+    in
   run e;;
+
+let purge_duplicates lst =
+  let rec purge lst2 =
+    match lst2 with
+    | [] -> []
+    | head :: tail ->
+      head :: purge (List.filter (fun e -> e <> head) tail)
+  in
+  purge lst;;
+
+(* TODO complete *)
+let pick_consts e =
+  let rec run expr' =
+    match expr' with
+    | Const' c -> [c]
+    | BoxSet' (var, new_val) -> run new_val
+    | If' (test, dit, dif) -> run test @ run dit @ run dif
+    | Seq' exprs' -> List.flatten (List.map run exprs')
+    | Set' (var, new_val) -> run new_val
+    | Def' (var, value) -> run value
+    | Or' exprs' -> List.flatten (List.map run exprs')
+    | LambdaSimple' (params, body) -> run body
+    | LambdaOpt' (params, optional, body) -> run body
+    | Applic' (operator, operands) -> run operator @ (List.flatten (List.map run operands))
+    | ApplicTP' (operator, operands) -> run operator @ (List.flatten (List.map run operands))
+    | _ -> []
+    in
+  run e;;
+
+(* TODO complete *)
+let make_const_table lst =
+  let first_pass = List.map pick_consts lst in
+  let first_pass = purge_duplicates first_pass in
+  first_pass;;
 
 let compile_scheme_file scm_source_file asm_target_file =
   let file_as_string = file_to_string scm_source_file in
   let file_as_expr'_list = List.map Semantics.run_semantics
                                     (Tag_Parser.read_expressions file_as_string) in
-  let code_as_list = List.map code_gen file_as_expr'_list in
-  let code = List.fold_right (fun code prev_code -> code ^ prev_code)
-                              code_as_list
-                              "" in
-  string_to_file asm_target_file (prologue ^ code ^ epilogue);;
+  begin
+    const_table := make_const_table file_as_expr'_list;
+    let code_as_list = List.map code_gen file_as_expr'_list in
+    let code = List.fold_right (fun code prev_code -> code ^ prev_code)
+                                code_as_list
+                                "" in
+    string_to_file asm_target_file (prologue ^ code ^ epilogue)
+  end
 end;;
