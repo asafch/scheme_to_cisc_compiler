@@ -734,7 +734,31 @@ let tag_parse sexpr =
                   else
                     Var s
     (* vector *)
+
+
+
+
+
+
+
+    (* W T F ?!?!?!?! why is this commented out?!?!?! *)
     | Vector coordinates -> raise X_syntax_error
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     (* If w/ else clause *)
     | Pair (Symbol "if", Pair (test, Pair (dit, Nil))) ->
         If (run test, run dit, Const Void)
@@ -1469,11 +1493,34 @@ let pick_consts e =
     in
   run e;;
 
+let expand_consts c =
+  let rec expander c2 =
+  match c2 with
+  | Void -> [c2]
+  | Bool b -> [c2]
+  | Nil -> [c2]
+  | Number num ->
+    begin
+      match num with
+      | Int i -> [c2]
+      | Fraction {numerator; denominator} -> [c2]
+    end
+  | Char chr -> [c2]
+  | String s -> [c2]
+  | Symbol s -> [c2]
+  | Pair (head, tail) -> expander head @ expander tail @ [(Pair (head, tail))]
+  | Vector entries -> List.flatten (List.map expander entries)
+  in
+  expander c;;
+
 (* TODO complete *)
 let make_const_table lst =
-  let first_pass = List.map pick_consts lst in
+  let prefix = [Void; Nil; Bool false; Bool true] in
+  let first_pass = List.flatten (List.map pick_consts lst) in
   let first_pass = purge_duplicates first_pass in
-  first_pass;;
+  let second_pass =  List.flatten (List.map expand_consts first_pass) in
+  let second_pass = purge_duplicates (prefix @ second_pass) in
+  second_pass;;
 
 let compile_scheme_file scm_source_file asm_target_file =
   let file_as_string = file_to_string scm_source_file in
