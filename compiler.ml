@@ -1351,7 +1351,6 @@ end;; *)
 (* module Code_Gen : CODE_GEN = struct *)
 module Code_Gen = struct
 
-
 exception X_why of string;;
 
 let t_VOID = 937610;;
@@ -1365,44 +1364,6 @@ let t_SYMBOL = 368031;;
 let t_PAIR = 885397;;
 let t_VECTOR = 335728;;
 let t_CLOSURE = 276405;;
-
-let prologue1 =
-  "
-#include <stdio.h>
-#include <stdlib.h>
-
-/* change to 0 for no debug info to be printed: */
-#define DO_SHOW 1
-#define MEM_START 1
-
-#include \"cisc.h\"
-
-int main()
-{
-
-  START_MACHINE(";;
-
-let prologue2 = ")\n\n
-JUMP(CONTINUE)
-
-#include \"char.lib\"
-#include \"io.lib\"
-#include \"math.lib\"
-#include \"scheme.lib\"
-#include \"string.lib\"
-#include \"system.lib\"
-
-CONTINUE:\n";;
-
-let epilogue =
-  "
-  PUSH(R0)
-  CALL(WRITELN)
-  DROP(1)
-  STOP_MACHINE
-
-  return 0;
-}";;
 
 let file_to_string input_file =
   let in_channel = open_in input_file in
@@ -1450,7 +1411,7 @@ let const_table = ref [];;
 let code_gen e =
   let rec run expr' =
     match expr' with
-    | Const' c -> "\tMOV(R0, ADDR(" ^ string_of_int (lookup c !const_table) ^ "))\n"
+    | Const' c -> "\tMOV(R0, IMM(MEM_START + " ^ string_of_int (lookup c !const_table) ^ "))\n"
     | Var' v ->
       begin
         match v with
@@ -1593,66 +1554,66 @@ let measure_length_of_const_table () =
                                           !const_table
                                           0;;
 
-let const_table_to_string () =
-  (* let postfix = ",\n\t\t\t\t\t\t" in
-  "\tlong const_table[] = \n\t\t\t\t\t\t{" ^
-  (List.fold_right (fun (c, addr, vals) prev -> let t = match List.hd vals with
-                                                    | t_VOID -> string_of_int t_VOID ^ postfix
-                                                    | t_NIL -> string_of_int t_NIL ^ postfix
-                                                    | t_BOOL -> string_of_int t_BOOL ^ (string_of_int (List.nth vals 1)) ^ postfix
-                                                    | t_CHAR -> string_of_int t_CHAR ^ string_of_int (List.nth vals 1) ^ postfix
-                                                    | t_INTEGER -> string_of_int t_INTEGER ^ string_of_int (List.nth vals 1) ^ postfix
-                                                    | t_FRACTION -> string_of_int t_INTEGER ^ string_of_int (List.nth vals 1) ^ string_of_int (List.nth vals 2) ^ postfix
-                                                    | t_STRING ->
-                                                        string_of_int (List.hd vals) ^
-                                                        (List.fold_right (fun v prev2 -> ", " ^
-                                                                                        (string_of_int v) ^
-                                                                                        prev2)
-                                                                        (List.tl vals)
-                                                                         postfix)
-                                                          ^ postfix
-                                                    | t_SYMBOL ->
-                                                        string_of_int (List.hd vals) ^
-                                                        (List.fold_right (fun v prev2 -> ", " ^
-                                                                                        (string_of_int v) ^
-                                                                                        prev2)
-                                                                        (List.tl vals)
-                                                                         postfix)
-                                                          ^ postfix
-                                                    | t_VECTOR -> string_of_int t_VECTOR ^
-                                                        (List.fold_right (fun v prev2 -> "MEM_START + " ^
-                                                                                        (string_of_int v) ^
-                                                                                        ", " ^
-                                                                                        prev2)
-                                                                        (List.tl vals)
-                                                                        "")
-                                                         ^ postfix
-                                                     | t_PAIR -> (string_of_int t_PAIR) ^
-                                                     "MEM_START + " ^ (string_of_int (List.nth vals 1)) ^
-                                                     "MEM_START + " ^ (string_of_int (List.nth vals 2)) ^
-                                                     postfix
-                                                in t ^ prev
-                      )
-                    !const_table
-                    ""
-    ) ^
-  ", 0};\n\n" *)
+let prologue =
+"
+#include <stdio.h>
+#include <stdlib.h>
 
+/* change to 0 for no debug info to be printed: */
+#define DO_SHOW 1
+#define MEM_START 1
+
+#include \"cisc.h\"
+
+int main()
+{
+
+  START_MACHINE
+  JUMP(CONTINUE)
+
+  #include \"char.lib\"
+  #include \"io.lib\"
+  #include \"math.lib\"
+  #include \"scheme.lib\"
+  #include \"string.lib\"
+  #include \"system.lib\"
+
+CONTINUE:\n";;
+
+let epilogue =
+  "
+  PUSH(R0)
+  CALL(WRITE_SOB)
+  DROP(1)
+  PUSH(IMM('\\n'))
+  CALL(PUTCHAR)
+  DROP(1)
+  STOP_MACHINE
+
+  return 0;
+}";;
+
+let char_to_string c =
+  Char.escaped (Char.chr c);;
+
+let const_table_to_string () =
   List.fold_right (fun (c, addr, vals) prev ->
-                      let upto =
+                      let curr =
                         match c with
-                        | Void -> "MOV(ADDR(MEM_START), T_VOID)\n"
-                        | Nil -> "MOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), T_NIL)\n"
-                        | Bool b -> "MOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), T_BOOL)\nMOV(ADDR(MEM_START + " ^ string_of_int (addr + 1) ^ "), IMM(" ^ string_of_int (List.nth vals 1) ^ "))\n"
-                        | Char c -> "MOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), T_CHAR)\nMOV(ADDR(MEM_START + " ^ string_of_int (addr + 1) ^ "), IMM(" ^ string_of_int (List.nth vals 1) ^ "))\n"
-                        | Number (Int i) -> "MOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), T_INTEGER)\nMOV(ADDR(MEM_START + " ^ string_of_int (addr + 1) ^ "), IMM(" ^ string_of_int (List.nth vals 1) ^ "))\n"
-                        | Number (Fraction f) -> "MOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), T_FRACTION)\nMOV(ADDR(MEM_START + " ^ string_of_int (addr + 1) ^ "), IMM(" ^ string_of_int (List.nth vals 1) ^ "))\nMOV(ADDR(MEM_START + " ^ string_of_int (addr + 2) ^ "), IMM(" ^ string_of_int (List.nth vals 2) ^ "))\n"
-                        (* | String s -> *)
+                        | Void -> "MOV(ADDR(MEM_START), IMM(T_VOID))\n"
+                        | Nil -> "MOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), IMM(T_NIL))\n"
+                        | Bool b -> "MOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), IMM(T_BOOL))\nMOV(ADDR(MEM_START + " ^ string_of_int (addr + 1) ^ "), IMM(" ^ string_of_int (List.nth vals 1) ^ "))\n"
+                        | Char c -> "MOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), IMM(T_CHAR))\nMOV(ADDR(MEM_START + " ^ string_of_int (addr + 1) ^ "), IMM('" ^ char_to_string (List.nth vals 1) ^ "'))\n"
+                        | Number (Int i) -> "MOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), IMM(T_INTEGER))\nMOV(ADDR(MEM_START + " ^ string_of_int (addr + 1) ^ "), IMM(" ^ string_of_int (List.nth vals 1) ^ "))\n"
+                        | Number (Fraction f) -> "MOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), IMM(T_FRACTION))\nMOV(ADDR(MEM_START + " ^ string_of_int (addr + 1) ^ "), IMM(" ^ string_of_int (List.nth vals 1) ^ "))\nMOV(ADDR(MEM_START + " ^ string_of_int (addr + 2) ^ "), IMM(" ^ string_of_int (List.nth vals 2) ^ "))\n"
+                        (* | String s ->
+                          let prefix = "MOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), IMM(T_STRING))\n" in *)
+
                         (* | Symbol s -> *)
-                        | Pair (head, tail) -> "MOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), T_PAIR)\nMOV(ADDR(MEM_START + " ^ string_of_int (addr + 1) ^ "), IMM(MEM_START + " ^ string_of_int (List.nth vals 1) ^ "))\nMOV(ADDR(MEM_START + " ^ string_of_int (addr + 2) ^ "), IMM(MEM_START + " ^ string_of_int (List.nth vals 2) ^ "))\n"
+                        | Pair (head, tail) -> "MOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), IMM(T_PAIR))\nMOV(ADDR(MEM_START + " ^ string_of_int (addr + 1) ^ "), IMM(MEM_START + " ^ string_of_int (List.nth vals 1) ^ "))\nMOV(ADDR(MEM_START + " ^ string_of_int (addr + 2) ^ "), IMM(MEM_START + " ^ string_of_int (List.nth vals 2) ^ "))\n"
                         (* | Vector entries -> *)
                       in
-                      upto ^ prev
+                      curr ^ prev
                     )
                   !const_table
                   "\n";;
@@ -1669,9 +1630,8 @@ let compile_scheme_file scm_source_file asm_target_file =
     let code = List.fold_right (fun code prev_code -> code ^ prev_code)
                                 code_as_list
                                 "" in
-    string_to_file asm_target_file (prologue1 ^
-                                    string_of_int !length_of_const_table ^
-                                    prologue2 ^
+    string_to_file asm_target_file (prologue ^
+                                    "PUSH(IMM(" ^ (string_of_int !length_of_const_table) ^ "))\nCALL(MALLOC)\nDROP(1)\n" ^
                                     const_table_to_string () ^
                                     code ^
                                     epilogue)

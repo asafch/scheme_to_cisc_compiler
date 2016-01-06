@@ -131,11 +131,11 @@ extern Machine *machine;
   }						\
 }
 
-#define START_MACHINE(x) 				\
+#define START_MACHINE 				\
   Machine *machine = 				\
     (Machine *)malloc(sizeof(Machine)); 	\
   MOV(SP, IMM(0));				\
-  MOV(ADDR(0), IMM(1 + MEM_START))
+  MOV(ADDR(0), IMM(1))
 
 #define STOP_MACHINE				\
   free(machine);
