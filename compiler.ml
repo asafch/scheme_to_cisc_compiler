@@ -1485,20 +1485,9 @@ let pick_consts e =
 let expand_consts c =
   let rec expander c2 =
   match c2 with
-  | Void -> [c2]
-  | Bool b -> [c2]
-  | Nil -> [c2]
-  | Number num ->
-    begin
-      match num with
-      | Int i -> [c2]
-      | Fraction {numerator; denominator} -> [c2]
-    end
-  | Char chr -> [c2]
-  | String s -> [c2]
-  | Symbol s -> [c2]
   | Pair (head, tail) -> expander head @ expander tail @ [(Pair (head, tail))]
   | Vector entries -> List.flatten (List.map expander entries)
+  | _ -> [c2]
   in
   expander c;;
 
@@ -1606,9 +1595,15 @@ let const_table_to_string () =
                         | Char c -> "MOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), IMM(T_CHAR))\nMOV(ADDR(MEM_START + " ^ string_of_int (addr + 1) ^ "), IMM('" ^ char_to_string (List.nth vals 1) ^ "'))\n"
                         | Number (Int i) -> "MOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), IMM(T_INTEGER))\nMOV(ADDR(MEM_START + " ^ string_of_int (addr + 1) ^ "), IMM(" ^ string_of_int (List.nth vals 1) ^ "))\n"
                         | Number (Fraction f) -> "MOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), IMM(T_FRACTION))\nMOV(ADDR(MEM_START + " ^ string_of_int (addr + 1) ^ "), IMM(" ^ string_of_int (List.nth vals 1) ^ "))\nMOV(ADDR(MEM_START + " ^ string_of_int (addr + 2) ^ "), IMM(" ^ string_of_int (List.nth vals 2) ^ "))\n"
-                        (* | String s ->
-                          let prefix = "MOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), IMM(T_STRING))\n" in *)
-
+                        | String s ->
+                          let prefix = "MOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), IMM(T_STRING))\n" in
+                          let index = ref(-1) in
+                          let s_length = String.length s in
+                          let suffix =
+                            List.fold_right (fun c prev -> index := !index + 1; "MOV(ADDR(MEM_START + " ^ string_of_int addr ^ " + " ^ string_of_int (s_length - !index) ^ "), IMM('" ^ char_to_string c ^ "'))\n" ^ prev)
+                                            (string_to_list_of_chars s)
+                                            "MOV(ADDR(MEM_START + " ^ string_of_int addr ^ " + " ^ string_of_int (s_length - !index) ^ "), IMM('\\0'))\n"
+                          in prefix ^ suffix
                         (* | Symbol s -> *)
                         | Pair (head, tail) -> "MOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), IMM(T_PAIR))\nMOV(ADDR(MEM_START + " ^ string_of_int (addr + 1) ^ "), IMM(MEM_START + " ^ string_of_int (List.nth vals 1) ^ "))\nMOV(ADDR(MEM_START + " ^ string_of_int (addr + 2) ^ "), IMM(MEM_START + " ^ string_of_int (List.nth vals 2) ^ "))\n"
                         (* | Vector entries -> *)
@@ -1625,7 +1620,6 @@ let compile_scheme_file scm_source_file asm_target_file =
   begin
     make_const_table file_as_expr'_list;
     measure_length_of_const_table ();
-    (* Printf.printf "length: %d\nlist:\n%s\n" !length_of_const_table (const_table_to_string ()) *)
     let code_as_list = List.map code_gen file_as_expr'_list in
     let code = List.fold_right (fun code prev_code -> code ^ prev_code)
                                 code_as_list

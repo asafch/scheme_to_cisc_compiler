@@ -1,8 +1,8 @@
 /* scheme/write_sob_string.asm
- * Take a pointer to a Scheme string object, and 
+ * Take a pointer to a Scheme string object, and
  * prints (to stdout) the character representation
  * of that object.
- * 
+ *
  * Programmer: Mayer Goldberg, 2010
  */
 
@@ -18,9 +18,9 @@
   MOV(R0, FPARG(0));
   MOV(R1, INDD(R0, 1));
   MOV(R2, R0);
-  ADD(R2, IMM(2));
+  ADD(R2, IMM(1));
  L_WSS_LOOP:
-  CMP(R1, IMM(0));
+  CMP(IND(R2), IMM(0));
   JUMP_EQ(L_WSS_EXIT);
   CMP(IND(R2), '\n');
   JUMP_EQ(L_WSS_NEWLINE);
@@ -74,7 +74,7 @@
   PUSH(IMM('t'));
   CALL(PUTCHAR);
   DROP(2);
-  JUMP(L_WSS_LOOP_CONT);  
+  JUMP(L_WSS_LOOP_CONT);
  L_WSS_NEWLINE:
   PUSH(IMM('\\'));
   CALL(PUTCHAR);
@@ -116,4 +116,3 @@
   POP(R1);
   POP(FP);
   RETURN;
-
