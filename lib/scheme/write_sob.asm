@@ -1,8 +1,8 @@
 /* scheme/write_sob.asm
- * Take a pointer to a Scheme object, and 
+ * Take a pointer to a Scheme object, and
  * prints (to stdout) the character representation
  * of that object.
- * 
+ *
  * Programmer: Mayer Goldberg, 2010
  */
 
@@ -12,13 +12,15 @@
   CMP(R0, IMM(T_VOID));
   JUMP_EQ(WRITE_SOB_VOID);
   CMP(R0, IMM(T_NIL));
-  JUMP_EQ(WRITE_SOB_NIL); 
+  JUMP_EQ(WRITE_SOB_NIL);
   CMP(R0, IMM(T_BOOL));
-  JUMP_EQ(WRITE_SOB_BOOL); 
+  JUMP_EQ(WRITE_SOB_BOOL);
   CMP(R0, IMM(T_CHAR));
-  JUMP_EQ(WRITE_SOB_CHAR); 
+  JUMP_EQ(WRITE_SOB_CHAR);
   CMP(R0, IMM(T_INTEGER));
   JUMP_EQ(WRITE_SOB_INTEGER);
+  CMP(R0, IMM(T_FRACTION));
+  JUMP_EQ(WRITE_SOB_FRACTION);
   CMP(R0, IMM(T_STRING));
   JUMP_EQ(WRITE_SOB_STRING);
   CMP(R0, IMM(T_SYMBOL));
