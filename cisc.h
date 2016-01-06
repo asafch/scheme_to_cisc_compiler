@@ -131,14 +131,14 @@ extern Machine *machine;
   }						\
 }
 
-#define START_MACHINE 				\
+#define START_MACHINE(x) 				\
   Machine *machine = 				\
     (Machine *)malloc(sizeof(Machine)); 	\
   MOV(SP, IMM(0));				\
-  MOV(ADDR(0), IMM(1))
+  MOV(ADDR(0), IMM(1 + MEM_START))
 
 #define STOP_MACHINE				\
-  free(machine)
+  free(machine);
 
 /* Set to 0 for no-debug, 1 for trace, 2 for step: */
 /* #define DO_SHOW 0 */

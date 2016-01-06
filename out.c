@@ -4,54 +4,66 @@
 
 /* change to 0 for no debug info to be printed: */
 #define DO_SHOW 1
+#define MEM_START 1
 
 #include "cisc.h"
 
 int main()
 {
-  START_MACHINE;
 
-  JUMP(CONTINUE);
-
-  #include "char.lib"
-  #include "io.lib"
-  #include "math.lib"
-  #include "string.lib"
-  #include "system.lib"
-
- CONTINUE:
-  L_if_else_1:
-	applic
-	CMP(R0, 1)
-	JUMP_NE(L_else_1)
-	1
-	JUMP(L_if_end_1)
-L_else_1: 
-	2
-L_if_end_1:
-
-L_if_else_2:
-	applic
-	CMP(R0, 1)
-	JUMP_NE(L_else_2)
-	3
-	JUMP(L_if_end_2)
-L_else_2: 
-	4
-L_if_end_2:
-
-L_if_else_3:
-	5
-	CMP(R0, 1)
-	JUMP_NE(L_else_3)
-	6
-	JUMP(L_if_end_3)
-L_else_3: 
-	MOV(R0, T_VOID)
-L_if_end_3:
+  START_MACHINE(27)
 
 
-  STOP_MACHINE;
+JUMP(CONTINUE)
+
+#include "char.lib"
+#include "io.lib"
+#include "math.lib"
+#include "scheme.lib"
+#include "string.lib"
+#include "system.lib"
+
+CONTINUE:
+MOV(ADDR(MEM_START), T_VOID)
+MOV(ADDR(MEM_START + 1), T_NIL)
+MOV(ADDR(MEM_START + 2), T_BOOL)
+MOV(ADDR(MEM_START + 3), IMM(0))
+MOV(ADDR(MEM_START + 4), T_BOOL)
+MOV(ADDR(MEM_START + 5), IMM(1))
+MOV(ADDR(MEM_START + 6), T_INTEGER)
+MOV(ADDR(MEM_START + 7), IMM(1))
+MOV(ADDR(MEM_START + 8), T_INTEGER)
+MOV(ADDR(MEM_START + 9), IMM(2))
+MOV(ADDR(MEM_START + 10), T_FRACTION)
+MOV(ADDR(MEM_START + 11), IMM(1))
+MOV(ADDR(MEM_START + 12), IMM(2))
+MOV(ADDR(MEM_START + 13), T_FRACTION)
+MOV(ADDR(MEM_START + 14), IMM(3))
+MOV(ADDR(MEM_START + 15), IMM(7))
+MOV(ADDR(MEM_START + 16), T_INTEGER)
+MOV(ADDR(MEM_START + 17), IMM(3))
+MOV(ADDR(MEM_START + 18), T_PAIR)
+MOV(ADDR(MEM_START + 19), IMM(MEM_START + 16))
+MOV(ADDR(MEM_START + 20), IMM(MEM_START + 1))
+MOV(ADDR(MEM_START + 21), T_PAIR)
+MOV(ADDR(MEM_START + 22), IMM(MEM_START + 8))
+MOV(ADDR(MEM_START + 23), IMM(MEM_START + 18))
+MOV(ADDR(MEM_START + 24), T_PAIR)
+MOV(ADDR(MEM_START + 25), IMM(MEM_START + 6))
+MOV(ADDR(MEM_START + 26), IMM(MEM_START + 21))
+
+	MOV(R0, ADDR(6))
+	MOV(R0, ADDR(8))
+	MOV(R0, ADDR(4))
+	MOV(R0, ADDR(1))
+	MOV(R0, ADDR(10))
+	MOV(R0, ADDR(13))
+	MOV(R0, ADDR(24))
+
+  PUSH(R0)
+  CALL(WRITELN)
+  DROP(1)
+  STOP_MACHINE
 
   return 0;
 }

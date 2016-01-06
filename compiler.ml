@@ -1366,30 +1366,33 @@ let t_PAIR = 885397;;
 let t_VECTOR = 335728;;
 let t_CLOSURE = 276405;;
 
-let prologue =
+let prologue1 =
   "
 #include <stdio.h>
 #include <stdlib.h>
 
 /* change to 0 for no debug info to be printed: */
 #define DO_SHOW 1
+#define MEM_START 1
 
 #include \"cisc.h\"
 
 int main()
 {
-  START_MACHINE;
 
-  JUMP(CONTINUE);
+  START_MACHINE(";;
 
-  #include \"char.lib\"
-  #include \"io.lib\"
-  #include \"math.lib\"
-  #include \"string.lib\"
-  #include \"system.lib\"
+let prologue2 = ")\n\n
+JUMP(CONTINUE)
 
- CONTINUE:
-  ";;
+#include \"char.lib\"
+#include \"io.lib\"
+#include \"math.lib\"
+#include \"scheme.lib\"
+#include \"string.lib\"
+#include \"system.lib\"
+
+CONTINUE:\n";;
 
 let epilogue =
   "
@@ -1447,7 +1450,7 @@ let const_table = ref [];;
 let code_gen e =
   let rec run expr' =
     match expr' with
-    | Const' c -> "MOV(R0, ADDR(" ^ string_of_int (lookup c !const_table) ^ "))"
+    | Const' c -> "\tMOV(R0, ADDR(" ^ string_of_int (lookup c !const_table) ^ "))\n"
     | Var' v ->
       begin
         match v with
@@ -1542,8 +1545,8 @@ let string_to_list_of_chars str =
   List.map (fun c -> Char.code c)
             (string_to_list str);;
 
-let vector_to_int_list entries const_table =
-  List.map (fun entry -> lookup entry const_table) entries
+let vector_to_int_list entries =
+  List.map (fun entry -> lookup entry !const_table) entries
 
 let make_const_table lst =
   let prefix = [Void; Nil; Bool false; Bool true] in
@@ -1578,9 +1581,81 @@ let make_const_table lst =
                                       const_table := !const_table @ [(e, k, [t_PAIR; lookup head !const_table; lookup tail !const_table])]
               | Vector entries -> let k = !counter in
                                   counter := k + 1 + (List.length entries);
-                                  const_table := !const_table @ [(e, k, [t_VECTOR] @ vector_to_int_list entries !const_table)]
+                                  const_table := !const_table @ [(e, k, [t_VECTOR] @ vector_to_int_list entries)]
               )
             second_pass;;
+
+let length_of_const_table = ref 0;;
+
+let measure_length_of_const_table () =
+  length_of_const_table :=
+                          List.fold_right (fun (v, addr, vals) acc -> List.length vals + acc)
+                                          !const_table
+                                          0;;
+
+let const_table_to_string () =
+  (* let postfix = ",\n\t\t\t\t\t\t" in
+  "\tlong const_table[] = \n\t\t\t\t\t\t{" ^
+  (List.fold_right (fun (c, addr, vals) prev -> let t = match List.hd vals with
+                                                    | t_VOID -> string_of_int t_VOID ^ postfix
+                                                    | t_NIL -> string_of_int t_NIL ^ postfix
+                                                    | t_BOOL -> string_of_int t_BOOL ^ (string_of_int (List.nth vals 1)) ^ postfix
+                                                    | t_CHAR -> string_of_int t_CHAR ^ string_of_int (List.nth vals 1) ^ postfix
+                                                    | t_INTEGER -> string_of_int t_INTEGER ^ string_of_int (List.nth vals 1) ^ postfix
+                                                    | t_FRACTION -> string_of_int t_INTEGER ^ string_of_int (List.nth vals 1) ^ string_of_int (List.nth vals 2) ^ postfix
+                                                    | t_STRING ->
+                                                        string_of_int (List.hd vals) ^
+                                                        (List.fold_right (fun v prev2 -> ", " ^
+                                                                                        (string_of_int v) ^
+                                                                                        prev2)
+                                                                        (List.tl vals)
+                                                                         postfix)
+                                                          ^ postfix
+                                                    | t_SYMBOL ->
+                                                        string_of_int (List.hd vals) ^
+                                                        (List.fold_right (fun v prev2 -> ", " ^
+                                                                                        (string_of_int v) ^
+                                                                                        prev2)
+                                                                        (List.tl vals)
+                                                                         postfix)
+                                                          ^ postfix
+                                                    | t_VECTOR -> string_of_int t_VECTOR ^
+                                                        (List.fold_right (fun v prev2 -> "MEM_START + " ^
+                                                                                        (string_of_int v) ^
+                                                                                        ", " ^
+                                                                                        prev2)
+                                                                        (List.tl vals)
+                                                                        "")
+                                                         ^ postfix
+                                                     | t_PAIR -> (string_of_int t_PAIR) ^
+                                                     "MEM_START + " ^ (string_of_int (List.nth vals 1)) ^
+                                                     "MEM_START + " ^ (string_of_int (List.nth vals 2)) ^
+                                                     postfix
+                                                in t ^ prev
+                      )
+                    !const_table
+                    ""
+    ) ^
+  ", 0};\n\n" *)
+
+  List.fold_right (fun (c, addr, vals) prev ->
+                      let upto =
+                        match c with
+                        | Void -> "MOV(ADDR(MEM_START), T_VOID)\n"
+                        | Nil -> "MOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), T_NIL)\n"
+                        | Bool b -> "MOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), T_BOOL)\nMOV(ADDR(MEM_START + " ^ string_of_int (addr + 1) ^ "), IMM(" ^ string_of_int (List.nth vals 1) ^ "))\n"
+                        | Char c -> "MOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), T_CHAR)\nMOV(ADDR(MEM_START + " ^ string_of_int (addr + 1) ^ "), IMM(" ^ string_of_int (List.nth vals 1) ^ "))\n"
+                        | Number (Int i) -> "MOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), T_INTEGER)\nMOV(ADDR(MEM_START + " ^ string_of_int (addr + 1) ^ "), IMM(" ^ string_of_int (List.nth vals 1) ^ "))\n"
+                        | Number (Fraction f) -> "MOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), T_FRACTION)\nMOV(ADDR(MEM_START + " ^ string_of_int (addr + 1) ^ "), IMM(" ^ string_of_int (List.nth vals 1) ^ "))\nMOV(ADDR(MEM_START + " ^ string_of_int (addr + 2) ^ "), IMM(" ^ string_of_int (List.nth vals 2) ^ "))\n"
+                        (* | String s -> *)
+                        (* | Symbol s -> *)
+                        | Pair (head, tail) -> "MOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), T_PAIR)\nMOV(ADDR(MEM_START + " ^ string_of_int (addr + 1) ^ "), IMM(MEM_START + " ^ string_of_int (List.nth vals 1) ^ "))\nMOV(ADDR(MEM_START + " ^ string_of_int (addr + 2) ^ "), IMM(MEM_START + " ^ string_of_int (List.nth vals 2) ^ "))\n"
+                        (* | Vector entries -> *)
+                      in
+                      upto ^ prev
+                    )
+                  !const_table
+                  "\n";;
 
 let compile_scheme_file scm_source_file asm_target_file =
   let file_as_string = file_to_string scm_source_file in
@@ -1588,10 +1663,17 @@ let compile_scheme_file scm_source_file asm_target_file =
                                     (Tag_Parser.read_expressions file_as_string) in
   begin
     make_const_table file_as_expr'_list;
+    measure_length_of_const_table ();
+    (* Printf.printf "length: %d\nlist:\n%s\n" !length_of_const_table (const_table_to_string ()) *)
     let code_as_list = List.map code_gen file_as_expr'_list in
     let code = List.fold_right (fun code prev_code -> code ^ prev_code)
                                 code_as_list
                                 "" in
-    string_to_file asm_target_file (prologue ^ code ^ epilogue)
+    string_to_file asm_target_file (prologue1 ^
+                                    string_of_int !length_of_const_table ^
+                                    prologue2 ^
+                                    const_table_to_string () ^
+                                    code ^
+                                    epilogue)
   end
 end;;
