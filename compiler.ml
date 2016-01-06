@@ -1354,6 +1354,18 @@ module Code_Gen = struct
 
 exception X_why of string;;
 
+let t_VOID = 937610;;
+let t_NIL = 722689;;
+let t_BOOL = 741553;;
+let t_CHAR = 181048;;
+let t_INTEGER = 945311;;
+let t_FRACTION = 451794;;
+let t_STRING = 799345;;
+let t_SYMBOL = 368031;;
+let t_PAIR = 885397;;
+let t_VECTOR = 335728;;
+let t_CLOSURE = 276405;;
+
 let prologue =
   "
 #include <stdio.h>
@@ -1381,7 +1393,10 @@ int main()
 
 let epilogue =
   "
-  STOP_MACHINE;
+  PUSH(R0)
+  CALL(WRITELN)
+  DROP(1)
+  STOP_MACHINE
 
   return 0;
 }";;
@@ -1400,6 +1415,16 @@ let string_to_file output_file out_string =
   let out_channel = open_out output_file in
   ( output_string out_channel out_string;
     close_out out_channel );;
+
+let lookup c lst =
+  let rec finder lst2 =
+    match lst2 with
+    | [] -> raise X_this_should_not_happen
+    | (c2, addr, vals) :: tail -> if c2 = c then
+                                    addr
+                                  else
+                                    finder tail
+  in finder lst;;
 
 let make_make_label name =
   let counter = ref 0
@@ -1422,7 +1447,7 @@ let const_table = ref [];;
 let code_gen e =
   let rec run expr' =
     match expr' with
-    | Const' c -> Sexpr.sexpr_to_string c
+    | Const' c -> "MOV(R0, ADDR(" ^ string_of_int (lookup c !const_table) ^ "))"
     | Var' v ->
       begin
         match v with
@@ -1513,21 +1538,56 @@ let expand_consts c =
   in
   expander c;;
 
-(* TODO complete *)
+let string_to_list_of_chars str =
+  List.map (fun c -> Char.code c)
+            (string_to_list str);;
+
+let vector_to_int_list entries const_table =
+  List.map (fun entry -> lookup entry const_table) entries
+
 let make_const_table lst =
   let prefix = [Void; Nil; Bool false; Bool true] in
-  let first_pass = List.flatten (List.map pick_consts lst) in
-  let first_pass = purge_duplicates first_pass in
+  let first_pass = List.map pick_consts lst in
+  let first_pass = List.flatten (purge_duplicates first_pass) in
   let second_pass =  List.flatten (List.map expand_consts first_pass) in
   let second_pass = purge_duplicates (prefix @ second_pass) in
-  second_pass;;
+  let counter = ref(6) in
+  List.iter (fun e ->
+              match e with
+              | Void -> const_table := [(e, 0, [t_VOID])]
+              | Nil ->  const_table := !const_table @ [(e, 1, [t_NIL])]
+              | Bool false -> const_table := !const_table @ [(e, 2, [t_BOOL; 0])]
+              | Bool true ->  const_table := !const_table @ [(e, 4, [t_BOOL; 1])]
+              | Number (Int i) -> let k = !counter in
+                                  counter := k + 2;
+                                  const_table := !const_table @ [(e, k, [t_INTEGER; i])]
+              | Number (Fraction {numerator; denominator}) -> let k = !counter in
+                                                              counter := k + 3;
+                                                              const_table := !const_table @ [(e, k, [t_FRACTION; numerator; denominator])]
+              | Char c -> let k = !counter in
+                          counter := k + 2;
+                          const_table := !const_table @ [(e, k, [t_CHAR; Char.code c])]
+              | String s -> let k = !counter in
+                            counter := k + 1 + (String.length s);
+                            const_table := !const_table @ [(e, k, [t_STRING] @ string_to_list_of_chars s)]
+              | Symbol s -> let k = !counter in
+                             counter := k + 1 + (String.length s);
+                             const_table := !const_table @ [(e, k, [t_SYMBOL] @ string_to_list_of_chars s)]
+              | Pair (head, tail) -> let k = !counter in
+                                      counter := k + 3;
+                                      const_table := !const_table @ [(e, k, [t_PAIR; lookup head !const_table; lookup tail !const_table])]
+              | Vector entries -> let k = !counter in
+                                  counter := k + 1 + (List.length entries);
+                                  const_table := !const_table @ [(e, k, [t_VECTOR] @ vector_to_int_list entries !const_table)]
+              )
+            second_pass;;
 
 let compile_scheme_file scm_source_file asm_target_file =
   let file_as_string = file_to_string scm_source_file in
   let file_as_expr'_list = List.map Semantics.run_semantics
                                     (Tag_Parser.read_expressions file_as_string) in
   begin
-    const_table := make_const_table file_as_expr'_list;
+    make_const_table file_as_expr'_list;
     let code_as_list = List.map code_gen file_as_expr'_list in
     let code = List.fold_right (fun code prev_code -> code ^ prev_code)
                                 code_as_list
