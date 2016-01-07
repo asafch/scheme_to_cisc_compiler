@@ -18,9 +18,9 @@
   MOV(R0, FPARG(0));
   MOV(R1, INDD(R0, 1));
   MOV(R2, R0);
-  ADD(R2, IMM(1));
+  ADD(R2, IMM(2));
  L_WSS_LOOP:
-  CMP(IND(R2), IMM(0));
+  CMP(R1, IMM(0));
   JUMP_EQ(L_WSS_EXIT);
   CMP(IND(R2), '\n');
   JUMP_EQ(L_WSS_NEWLINE);

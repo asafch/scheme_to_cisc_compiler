@@ -734,31 +734,7 @@ let tag_parse sexpr =
                   else
                     Var s
     (* vector *)
-
-
-
-
-
-
-
-    (* W T F ?!?!?!?! why is this commented out?!?!?! *)
-    | Vector coordinates -> raise X_syntax_error
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    | Vector entries -> Const sexpr
     (* If w/ else clause *)
     | Pair (Symbol "if", Pair (test, Pair (dit, Nil))) ->
         If (run test, run dit, Const Void)
@@ -1383,7 +1359,7 @@ let string_to_file output_file out_string =
 let lookup c lst =
   let rec finder lst2 =
     match lst2 with
-    | [] -> raise X_this_should_not_happen
+    | [] -> raise (X_why "kaki")
     | (c2, addr, vals) :: tail -> if c2 = c then
                                     addr
                                   else
@@ -1486,7 +1462,7 @@ let expand_consts c =
   let rec expander c2 =
   match c2 with
   | Pair (head, tail) -> expander head @ expander tail @ [(Pair (head, tail))]
-  | Vector entries -> List.flatten (List.map expander entries)
+  | Vector entries -> (List.flatten (List.map expander entries)) @ [Vector entries]
   | _ -> [c2]
   in
   expander c;;
@@ -1596,25 +1572,33 @@ let const_table_to_string () =
                         | Number (Int i) -> "MOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), IMM(T_INTEGER))\nMOV(ADDR(MEM_START + " ^ string_of_int (addr + 1) ^ "), IMM(" ^ string_of_int (List.nth vals 1) ^ "))\n"
                         | Number (Fraction f) -> "MOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), IMM(T_FRACTION))\nMOV(ADDR(MEM_START + " ^ string_of_int (addr + 1) ^ "), IMM(" ^ string_of_int (List.nth vals 1) ^ "))\nMOV(ADDR(MEM_START + " ^ string_of_int (addr + 2) ^ "), IMM(" ^ string_of_int (List.nth vals 2) ^ "))\n"
                         | String s ->
-                          let prefix = "MOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), IMM(T_STRING))\n" in
-                          let index = ref(-1) in
                           let s_length = String.length s in
+                          let prefix = "MOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), IMM(T_STRING))\nMOV(ADDR(MEM_START + " ^ string_of_int addr ^ " + 1), IMM(" ^ string_of_int s_length ^ "))\n" in
+                          let index = ref(-2) in
                           let suffix =
                             List.fold_right (fun c prev -> index := !index + 1; "MOV(ADDR(MEM_START + " ^ string_of_int addr ^ " + " ^ string_of_int (s_length - !index) ^ "), IMM('" ^ char_to_string c ^ "'))\n" ^ prev)
                                             (string_to_list_of_chars s)
-                                            "MOV(ADDR(MEM_START + " ^ string_of_int addr ^ " + " ^ string_of_int (s_length - !index) ^ "), IMM('\\0'))\n"
+                                            ""
                           in prefix ^ suffix
                         | Symbol s ->
-                          let prefix = "MOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), IMM(T_SYMBOL))\n" in
-                          let index = ref(-1) in
                           let s_length = String.length s in
+                          let prefix = "MOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), IMM(T_SYMBOL))\nMOV(ADDR(MEM_START + " ^ string_of_int addr ^ " + 1), IMM(" ^ string_of_int s_length ^ "))\n" in
+                          let index = ref(-2) in
                           let suffix =
                             List.fold_right (fun c prev -> index := !index + 1; "MOV(ADDR(MEM_START + " ^ string_of_int addr ^ " + " ^ string_of_int (s_length - !index) ^ "), IMM('" ^ char_to_string c ^ "'))\n" ^ prev)
                                             (string_to_list_of_chars s)
-                                            "MOV(ADDR(MEM_START + " ^ string_of_int addr ^ " + " ^ string_of_int (s_length - !index) ^ "), IMM('\\0'))\n"
+                                            ""
                           in prefix ^ suffix
                         | Pair (head, tail) -> "MOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), IMM(T_PAIR))\nMOV(ADDR(MEM_START + " ^ string_of_int (addr + 1) ^ "), IMM(MEM_START + " ^ string_of_int (List.nth vals 1) ^ "))\nMOV(ADDR(MEM_START + " ^ string_of_int (addr + 2) ^ "), IMM(MEM_START + " ^ string_of_int (List.nth vals 2) ^ "))\n"
-                        (* | Vector entries -> *)
+                        | Vector entries ->
+                          let prefix = "MOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), IMM(T_VECTOR))\n" in
+                          let index = ref(-1) in
+                          let vec_length = List.length entries in
+                          let suffix =
+                            List.fold_right (fun c prev -> index := !index + 1; "MOV(ADDR(MEM_START + " ^ string_of_int addr ^ " + " ^ string_of_int (vec_length - !index) ^ "), IMM('" ^ (string_of_int (lookup (List.nth entries (vec_length - 1 - !index)) !const_table)) ^ "'))\n" ^ prev)
+                                            entries
+                                            ""
+                          in prefix ^ suffix
                       in
                       curr ^ prev
                     )
@@ -1641,16 +1625,16 @@ let compile_scheme_file scm_source_file asm_target_file =
 end;;
 
 (* #trace Code_Gen.compile_scheme_file;; *)
-#trace Code_Gen.const_table_to_string;;
+(* #trace Code_Gen.const_table_to_string;; *)
 (* #trace Code_Gen.char_to_string;; *)
 (* #trace Code_Gen.measure_length_of_const_table;; *)
-#trace Code_Gen.make_const_table;;
+(* #trace Code_Gen.make_const_table;; *)
 (* #trace Code_Gen.vector_to_int_list;; *)
 (* #trace Code_Gen.string_to_list_of_chars;; *)
 (* #trace Code_Gen.expand_consts;; *)
 (* #trace Code_Gen.pick_consts;; *)
 (* #trace Code_Gen.purge_duplicates;; *)
-#trace Code_Gen.code_gen;;
+(* #trace Code_Gen.code_gen;; *)
 (* #trace Code_Gen.lookup;; *)
 (* #trace Code_Gen.file_to_string;; *)
 (* #trace Code_Gen.string_to_file;; *)
