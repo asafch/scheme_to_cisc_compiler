@@ -1388,20 +1388,20 @@ let code_gen e =
   let rec run expr' =
     match expr' with
     | Const' c -> "\tMOV(R0, IMM(MEM_START + " ^ string_of_int (lookup c !const_table) ^ "))\n"
-    | Var' v ->
+    (* | Var' v ->
       begin
         match v with
         | VarFree' var -> "varfree"
         | VarParam' (var, minor) -> "varparam"
         | VarBound' (var, major, minor) -> "varbound"
-      end
-    | BoxGet' var -> "boxget"
-    | BoxSet' (var, new_val) -> "boxset"
+      end *)
+    (* | BoxGet' var -> "boxget" *)
+    (* | BoxSet' (var, new_val) -> "boxset" *)
     | If' (test,dit, Const' Void) ->
       let (in_label, else_label, end_label) = make_if_else_labels () in
       in_label ^ ":\n" ^
       "\t" ^ (run test) ^ "\n" ^
-      "\tCMP(R0, 1)\n" ^
+      "\tCMP(R0, IND(MEM_START + 3))\n" ^
       "\tJUMP_NE(" ^ else_label ^ ")\n" ^
       "\t" ^ (run dit) ^ "\n" ^
       "\tJUMP(" ^ end_label ^ ")\n" ^
@@ -1412,20 +1412,20 @@ let code_gen e =
       let (in_label, else_label, end_label) = make_if_else_labels () in
       in_label ^ ":\n" ^
       "\t" ^ (run test) ^ "\n" ^
-      "\tCMP(R0, 1)\n" ^
+      "\tCMP(R0, IND(MEM_START + 3))\n" ^
       "\tJUMP_NE(" ^ else_label ^ ")\n" ^
       "\t" ^ (run dit) ^ "\n" ^
       "\tJUMP(" ^ end_label ^ ")\n" ^
       else_label ^ ": \n" ^
       "\t" ^ (run dif) ^ "\n" ^
       end_label ^ ":\n\n"
-    | Seq' exprs' -> "begin"
-    | Def' (var, value) -> "define"
-    | Or' exprs' -> "or"
-    | LambdaSimple' (params, body) -> "lambda"
-    | LambdaOpt' (params, optional, body) -> "lambda opt"
-    | Applic' (operator, operands) -> "applic"
-    | ApplicTP' (operator, operands) -> "applit tp"
+    (* | Seq' exprs' -> "begin" *)
+    (* | Def' (var, value) -> "define" *)
+    (* | Or' exprs' -> "or" *)
+    (* | LambdaSimple' (params, body) -> "lambda" *)
+    (* | LambdaOpt' (params, optional, body) -> "lambda opt" *)
+    (* | Applic' (operator, operands) -> "applic" *)
+    (* | ApplicTP' (operator, operands) -> "applit tp" *)
     | _ -> raise (X_why "codegen")
     in
   run e;;
@@ -1497,16 +1497,17 @@ let make_const_table lst =
                           counter := k + 2;
                           const_table := !const_table @ [(e, k, [t_CHAR; Char.code c])]
               | String s -> let k = !counter in
-                            counter := k + 1 + (String.length s);
+                            counter := k + 2 + (String.length s);
                             const_table := !const_table @ [(e, k, [t_STRING] @ string_to_list_of_chars s)]
               | Symbol s -> let k = !counter in
-                             counter := k + 1 + (String.length s);
+                             counter := k + 2 + (String.length s);
                              const_table := !const_table @ [(e, k, [t_SYMBOL] @ string_to_list_of_chars s)]
+               (* add cases for the following inputs: 'cake, '(1 2) *)
               | Pair (head, tail) -> let k = !counter in
                                       counter := k + 3;
                                       const_table := !const_table @ [(e, k, [t_PAIR; lookup head !const_table; lookup tail !const_table])]
               | Vector entries -> let k = !counter in
-                                  counter := k + 1 + (List.length entries);
+                                  counter := k + 2 + (List.length entries);
                                   const_table := !const_table @ [(e, k, [t_VECTOR] @ vector_to_int_list entries)]
               )
             second_pass;;
@@ -1549,10 +1550,9 @@ let epilogue =
   "
   PUSH(R0)
   CALL(WRITE_SOB)
-  DROP(1)
   PUSH(IMM('\\n'))
   CALL(PUTCHAR)
-  DROP(1)
+  DROP(2)
   STOP_MACHINE
 
   return 0;
@@ -1591,11 +1591,11 @@ let const_table_to_string () =
                           in prefix ^ suffix
                         | Pair (head, tail) -> "MOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), IMM(T_PAIR))\nMOV(ADDR(MEM_START + " ^ string_of_int (addr + 1) ^ "), IMM(MEM_START + " ^ string_of_int (List.nth vals 1) ^ "))\nMOV(ADDR(MEM_START + " ^ string_of_int (addr + 2) ^ "), IMM(MEM_START + " ^ string_of_int (List.nth vals 2) ^ "))\n"
                         | Vector entries ->
-                          let prefix = "MOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), IMM(T_VECTOR))\n" in
-                          let index = ref(-1) in
                           let vec_length = List.length entries in
+                          let prefix = "MOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), IMM(T_VECTOR))\nMOV(ADDR(MEM_START + " ^ string_of_int addr ^ " + 1), IMM(" ^ string_of_int vec_length ^ "))\n" in
+                          let index = ref(-2) in
                           let suffix =
-                            List.fold_right (fun c prev -> index := !index + 1; "MOV(ADDR(MEM_START + " ^ string_of_int addr ^ " + " ^ string_of_int (vec_length - !index) ^ "), IMM('" ^ (string_of_int (lookup (List.nth entries (vec_length - 1 - !index)) !const_table)) ^ "'))\n" ^ prev)
+                            List.fold_right (fun c prev -> index := !index + 1; "MOV(ADDR(MEM_START + " ^ string_of_int addr ^ " + " ^ string_of_int (vec_length - !index) ^ "), IMM(MEM_START + " ^ (string_of_int (lookup (List.nth entries (vec_length - 2 - !index)) !const_table)) ^ "))\n" ^ prev)
                                             entries
                                             ""
                           in prefix ^ suffix

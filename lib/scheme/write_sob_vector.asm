@@ -1,8 +1,8 @@
 /* scheme/write_sob_vector.asm
- * Take a pointer to a Scheme vector object, and 
+ * Take a pointer to a Scheme vector object, and
  * prints (to stdout) the character representation
  * of that object.
- * 
+ *
  * Programmer: Mayer Goldberg, 2010
  */
 
@@ -14,11 +14,11 @@
   PUSH(IMM('#'));
   CALL(PUTCHAR);
   MOV(R0, FPARG(0));
-  PUSH(INDD(R0, 1));
-  CALL(WRITE_INTEGER);
+  //PUSH(INDD(R0, 1));
+  //CALL(WRITE_INTEGER);
   PUSH(IMM('('));
   CALL(PUTCHAR);
-  DROP(3);
+  DROP(2);
   MOV(R0, FPARG(0));
   MOV(R1, INDD(R0, 1));
   CMP(R1, IMM(0));
@@ -41,7 +41,7 @@
   DROP(1);
   INCR(R2);
   DECR(R1);
-  JUMP(L_WSV_LOOP);  
+  JUMP(L_WSV_LOOP);
  L_WSV_EXIT:
   PUSH(IMM(')'));
   CALL(PUTCHAR);
@@ -50,4 +50,3 @@
   POP(R1);
   POP(FP);
   RETURN;
-
