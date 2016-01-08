@@ -1380,7 +1380,35 @@ let make_if_else_labels =
   fun () ->
   (make_if_else(), make_else(), make_if_end());;
 
-(* TODO make labels for all code cases *)
+let make_or_labels =
+  let make_entrance = make_make_label "L_or" in
+  let make_exit = make_make_label "L_or_end" in
+  fun () ->
+  (make_entrance(), make_exit());;
+
+let make_lambda_simple_labels =
+  let make_entrance = make_make_label "L_lambda_simple" in
+  let make_exit = make_make_label "L_lambda_simple_end" in
+  fun () ->
+  (make_entrance(), make_exit());;
+
+let make_lambda_opt_labels =
+  let make_entrance = make_make_label "L_lambda_opt" in
+  let make_exit = make_make_label "L_lambda_opt_end" in
+  fun () ->
+  (make_entrance(), make_exit());;
+
+let make_application_labels =
+  let make_entrance = make_make_label "L_applic" in
+  let make_exit = make_make_label "L_lapplic_end" in
+  fun () ->
+  (make_entrance(), make_exit());;
+
+let make_application_tp_labels =
+  let make_entrance = make_make_label "L_applic_tp" in
+  let make_exit = make_make_label "L_applic_tp_end" in
+  fun () ->
+  (make_entrance(), make_exit());;
 
 let const_table = ref [];;
 
@@ -1388,43 +1416,65 @@ let code_gen e =
   let rec run expr' =
     match expr' with
     | Const' c -> "\tMOV(R0, IMM(MEM_START + " ^ string_of_int (lookup c !const_table) ^ "))\n"
-    (* | Var' v ->
+    | Var' v ->
       begin
         match v with
         | VarFree' var -> "varfree"
-        | VarParam' (var, minor) -> "varparam"
-        | VarBound' (var, major, minor) -> "varbound"
-      end *)
+        | VarParam' (var, minor) -> "MOV(R0, FPARG(" ^ string_of_int minor ^ "))\n"
+        | VarBound' (var, major, minor) -> "\tMOV(R0, FPARG(0))\n
+                                            \tMOV(R0, INDD(R0, " ^ string_of_int major ^ "))\n
+                                            \tMOV(R0, INDD(R0, " ^ string_of_int minor ^ "))\n"
+      end
     (* | BoxGet' var -> "boxget" *)
     (* | BoxSet' (var, new_val) -> "boxset" *)
-    | If' (test,dit, Const' Void) ->
-      let (in_label, else_label, end_label) = make_if_else_labels () in
-      in_label ^ ":\n" ^
-      "\t" ^ (run test) ^ "\n" ^
-      "\tCMP(R0, IND(MEM_START + 3))\n" ^
-      "\tJUMP_NE(" ^ else_label ^ ")\n" ^
-      "\t" ^ (run dit) ^ "\n" ^
-      "\tJUMP(" ^ end_label ^ ")\n" ^
-      else_label ^ ": \n" ^
-      "\t" ^ "MOV(R0, T_VOID)" ^ "\n" ^
-      end_label ^ ":\n\n"
     | If' (test, dit, dif) ->
       let (in_label, else_label, end_label) = make_if_else_labels () in
       in_label ^ ":\n" ^
       "\t" ^ (run test) ^ "\n" ^
       "\tCMP(R0, IND(MEM_START + 3))\n" ^
-      "\tJUMP_NE(" ^ else_label ^ ")\n" ^
+      "\tJUMP_EQ(" ^ else_label ^ ")\n" ^
       "\t" ^ (run dit) ^ "\n" ^
       "\tJUMP(" ^ end_label ^ ")\n" ^
       else_label ^ ": \n" ^
       "\t" ^ (run dif) ^ "\n" ^
       end_label ^ ":\n\n"
-    (* | Seq' exprs' -> "begin" *)
+    | Seq' exprs' ->
+      List.fold_right (fun curr prev -> (run curr) ^ "\n" ^ prev)
+                      exprs'
+                      ""
     (* | Def' (var, value) -> "define" *)
-    (* | Or' exprs' -> "or" *)
-    (* | LambdaSimple' (params, body) -> "lambda" *)
+    | Or' exprs' ->
+      let (entrance, exit) = make_or_labels () in
+      entrance ^ ":\n" ^
+      (List.fold_right (fun e prev ->
+                          (run e) ^
+                          "\tCMP(R0, INDD(MEM_START, 3))\n" ^
+                          "\tJUMP_NE(" ^ exit ^ ")\n" ^
+                          prev
+                      )
+                      exprs'
+                      (exit ^ ":\n"))
+    (* | LambdaSimple' (params, body) ->
+      let (entrance, exit) = make_lambda_simple_labels in
+      List.fold_right ()
+                       *)
     (* | LambdaOpt' (params, optional, body) -> "lambda opt" *)
-    (* | Applic' (operator, operands) -> "applic" *)
+    | Applic' (operator, operands) ->
+      let (entrance, exit) = make_application_labels () in
+      entrance ^ ":\n" ^
+      (List.fold_right (fun operand prev -> (run operand) ^ "\tPUSH(R0)\n" ^ prev)
+                      operands
+                      "") ^
+      (run operator) ^
+      "\tCMP(R0, IMM(T_CLOSURE))\n" ^
+      "\tJUMP_NE(EXCPETION_APPLYING_NON_PROCEDURE)\n" ^
+      "\tPUSH(IMM(" ^ string_of_int (List.length operands) ^ "))\n" ^
+      "\tPUSH(INDD(R0, 1))\n" ^
+      "\tCALLA(INDD(R0, 2))\n" ^
+      "\tPOP(R1)\n" ^
+      "\tPOP(R1)\n" ^
+      "\tDROP(R1)\n" ^
+      exit ^ ":\n"
     (* | ApplicTP' (operator, operands) -> "applit tp" *)
     | _ -> raise (X_why "codegen")
     in
@@ -1439,7 +1489,6 @@ let purge_duplicates lst =
   in
   purge lst;;
 
-(* TODO complete *)
 let pick_consts e =
   let rec run expr' =
     match expr' with
@@ -1502,7 +1551,6 @@ let make_const_table lst =
               | Symbol s -> let k = !counter in
                              counter := k + 2 + (String.length s);
                              const_table := !const_table @ [(e, k, [t_SYMBOL] @ string_to_list_of_chars s)]
-               (* add cases for the following inputs: 'cake, '(1 2) *)
               | Pair (head, tail) -> let k = !counter in
                                       counter := k + 3;
                                       const_table := !const_table @ [(e, k, [t_PAIR; lookup head !const_table; lookup tail !const_table])]
@@ -1544,6 +1592,10 @@ int main()
   #include \"string.lib\"
   #include \"system.lib\"
 
+EXCPETION_APPLYING_NON_PROCEDURE:
+  SHOW(\"Trying to apply a non-procedure: \", R0)
+  HALT
+
 CONTINUE:\n";;
 
 let epilogue =
@@ -1561,49 +1613,49 @@ let epilogue =
 let char_to_string c =
   Char.escaped (Char.chr c);;
 
-let const_table_to_string () =
-  List.fold_right (fun (c, addr, vals) prev ->
-                      let curr =
-                        match c with
-                        | Void -> "MOV(ADDR(MEM_START), IMM(T_VOID))\n"
-                        | Nil -> "MOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), IMM(T_NIL))\n"
-                        | Bool b -> "MOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), IMM(T_BOOL))\nMOV(ADDR(MEM_START + " ^ string_of_int (addr + 1) ^ "), IMM(" ^ string_of_int (List.nth vals 1) ^ "))\n"
-                        | Char c -> "MOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), IMM(T_CHAR))\nMOV(ADDR(MEM_START + " ^ string_of_int (addr + 1) ^ "), IMM('" ^ char_to_string (List.nth vals 1) ^ "'))\n"
-                        | Number (Int i) -> "MOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), IMM(T_INTEGER))\nMOV(ADDR(MEM_START + " ^ string_of_int (addr + 1) ^ "), IMM(" ^ string_of_int (List.nth vals 1) ^ "))\n"
-                        | Number (Fraction f) -> "MOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), IMM(T_FRACTION))\nMOV(ADDR(MEM_START + " ^ string_of_int (addr + 1) ^ "), IMM(" ^ string_of_int (List.nth vals 1) ^ "))\nMOV(ADDR(MEM_START + " ^ string_of_int (addr + 2) ^ "), IMM(" ^ string_of_int (List.nth vals 2) ^ "))\n"
-                        | String s ->
-                          let s_length = String.length s in
-                          let prefix = "MOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), IMM(T_STRING))\nMOV(ADDR(MEM_START + " ^ string_of_int addr ^ " + 1), IMM(" ^ string_of_int s_length ^ "))\n" in
-                          let index = ref(-2) in
-                          let suffix =
-                            List.fold_right (fun c prev -> index := !index + 1; "MOV(ADDR(MEM_START + " ^ string_of_int addr ^ " + " ^ string_of_int (s_length - !index) ^ "), IMM('" ^ char_to_string c ^ "'))\n" ^ prev)
-                                            (string_to_list_of_chars s)
-                                            ""
-                          in prefix ^ suffix
-                        | Symbol s ->
-                          let s_length = String.length s in
-                          let prefix = "MOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), IMM(T_SYMBOL))\nMOV(ADDR(MEM_START + " ^ string_of_int addr ^ " + 1), IMM(" ^ string_of_int s_length ^ "))\n" in
-                          let index = ref(-2) in
-                          let suffix =
-                            List.fold_right (fun c prev -> index := !index + 1; "MOV(ADDR(MEM_START + " ^ string_of_int addr ^ " + " ^ string_of_int (s_length - !index) ^ "), IMM('" ^ char_to_string c ^ "'))\n" ^ prev)
-                                            (string_to_list_of_chars s)
-                                            ""
-                          in prefix ^ suffix
-                        | Pair (head, tail) -> "MOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), IMM(T_PAIR))\nMOV(ADDR(MEM_START + " ^ string_of_int (addr + 1) ^ "), IMM(MEM_START + " ^ string_of_int (List.nth vals 1) ^ "))\nMOV(ADDR(MEM_START + " ^ string_of_int (addr + 2) ^ "), IMM(MEM_START + " ^ string_of_int (List.nth vals 2) ^ "))\n"
-                        | Vector entries ->
-                          let vec_length = List.length entries in
-                          let prefix = "MOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), IMM(T_VECTOR))\nMOV(ADDR(MEM_START + " ^ string_of_int addr ^ " + 1), IMM(" ^ string_of_int vec_length ^ "))\n" in
-                          let index = ref(-2) in
-                          let suffix =
-                            List.fold_right (fun c prev -> index := !index + 1; "MOV(ADDR(MEM_START + " ^ string_of_int addr ^ " + " ^ string_of_int (vec_length - !index) ^ "), IMM(MEM_START + " ^ (string_of_int (lookup (List.nth entries (vec_length - 2 - !index)) !const_table)) ^ "))\n" ^ prev)
-                                            entries
-                                            ""
-                          in prefix ^ suffix
-                      in
-                      curr ^ prev
-                    )
-                  !const_table
-                  "\n";;
+  let const_table_to_string () =
+    List.fold_right (fun (c, addr, vals) prev ->
+                        let curr =
+                          match c with
+                          | Void -> "\tMOV(ADDR(MEM_START), IMM(T_VOID))\n"
+                          | Nil -> "\tMOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), IMM(T_NIL))\n"
+                          | Bool b -> "\tMOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), IMM(T_BOOL))\n\tMOV(ADDR(MEM_START + " ^ string_of_int (addr + 1) ^ "), IMM(" ^ string_of_int (List.nth vals 1) ^ "))\n"
+                          | Char c -> "\tMOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), IMM(T_CHAR))\n\tMOV(ADDR(MEM_START + " ^ string_of_int (addr + 1) ^ "), IMM('" ^ char_to_string (List.nth vals 1) ^ "'))\n"
+                          | Number (Int i) -> "\tMOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), IMM(T_INTEGER))\n\tMOV(ADDR(MEM_START + " ^ string_of_int (addr + 1) ^ "), IMM(" ^ string_of_int (List.nth vals 1) ^ "))\n"
+                          | Number (Fraction f) -> "\tMOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), IMM(T_FRACTION))\n\tMOV(ADDR(MEM_START + " ^ string_of_int (addr + 1) ^ "), IMM(" ^ string_of_int (List.nth vals 1) ^ "))\nMOV(ADDR(MEM_START + " ^ string_of_int (addr + 2) ^ "), IMM(" ^ string_of_int (List.nth vals 2) ^ "))\n"
+                          | String s ->
+                            let s_length = String.length s in
+                            let prefix = "\tMOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), IMM(T_STRING))\n\tMOV(ADDR(MEM_START + " ^ string_of_int addr ^ " + 1), IMM(" ^ string_of_int s_length ^ "))\n" in
+                            let index = ref(-2) in
+                            let suffix =
+                              List.fold_right (fun c prev -> index := !index + 1; "\tMOV(ADDR(MEM_START + " ^ string_of_int addr ^ " + " ^ string_of_int (s_length - !index) ^ "), IMM('" ^ char_to_string c ^ "'))\n" ^ prev)
+                                              (string_to_list_of_chars s)
+                                              ""
+                            in prefix ^ suffix
+                          | Symbol s ->
+                            let s_length = String.length s in
+                            let prefix = "\tMOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), IMM(T_SYMBOL))\n\tMOV(ADDR(MEM_START + " ^ string_of_int addr ^ " + 1), IMM(" ^ string_of_int s_length ^ "))\n" in
+                            let index = ref(-2) in
+                            let suffix =
+                              List.fold_right (fun c prev -> index := !index + 1; "\tMOV(ADDR(MEM_START + " ^ string_of_int addr ^ " + " ^ string_of_int (s_length - !index) ^ "), IMM('" ^ char_to_string c ^ "'))\n" ^ prev)
+                                              (string_to_list_of_chars s)
+                                              ""
+                            in prefix ^ suffix
+                          | Pair (head, tail) -> "\tMOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), IMM(T_PAIR))\n\tMOV(ADDR(MEM_START + " ^ string_of_int (addr + 1) ^ "), IMM(MEM_START + " ^ string_of_int (List.nth vals 1) ^ "))\n\tMOV(ADDR(MEM_START + " ^ string_of_int (addr + 2) ^ "), IMM(MEM_START + " ^ string_of_int (List.nth vals 2) ^ "))\n"
+                          | Vector entries ->
+                            let vec_length = List.length entries in
+                            let prefix = "\tMOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), IMM(T_VECTOR))\n\tMOV(ADDR(MEM_START + " ^ string_of_int addr ^ " + 1), IMM(" ^ string_of_int vec_length ^ "))\n" in
+                            let index = ref(-2) in
+                            let suffix =
+                              List.fold_right (fun c prev -> index := !index + 1; "\tMOV(ADDR(MEM_START + " ^ string_of_int addr ^ " + " ^ string_of_int (vec_length - !index) ^ "), IMM(MEM_START + " ^ (string_of_int (lookup (List.nth entries (vec_length - 2 - !index)) !const_table)) ^ "))\n" ^ prev)
+                                              entries
+                                              ""
+                            in prefix ^ suffix
+                        in
+                        curr ^ prev
+                      )
+                    !const_table
+                    "\n";;
 
 let compile_scheme_file scm_source_file asm_target_file =
   let file_as_string = file_to_string scm_source_file in
@@ -1617,7 +1669,7 @@ let compile_scheme_file scm_source_file asm_target_file =
                                 code_as_list
                                 "" in
     string_to_file asm_target_file (prologue ^
-                                    "PUSH(IMM(" ^ (string_of_int !length_of_const_table) ^ "))\nCALL(MALLOC)\nDROP(1)\n" ^
+                                    "\tPUSH(IMM(" ^ (string_of_int !length_of_const_table) ^ "))\n\tCALL(MALLOC)\n\tDROP(1)\n" ^
                                     const_table_to_string () ^
                                     code ^
                                     epilogue)

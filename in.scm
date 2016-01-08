@@ -6,6 +6,21 @@
 
 #;'asfgdsfgsdfhgwghrwghwefh1835             ; just a symbol
 
+
 #;(if #t 1 2)                               ; if with 'else' clause
 
 #;(if #f 3)                                 ; if without else clause, test evaluates to #f, should return #<void> as per write_sob_void.asm
+
+#;`(1 2 'k)                                 ; quasiquote
+
+#;`(1 ,2 'k)                                ; quasiquote with unquote
+
+#;`(1 ,@2 'k)                               ; quasiquote with unquote-splicing
+
+#;(begin 1 2 3)                             ; sequence
+
+#;(or)                                      ; or without sub-expressions
+
+#;(or #f #f 'a)                             ; or with sub-expressions
+
+(1 2 3)                                     ; applying non-procedure - ERROR
