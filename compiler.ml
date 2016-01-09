@@ -1479,7 +1479,7 @@ let code_gen e =
         "\tINCR(R4)\n" ^                        (* j++ *)
         "\tJUMP(" ^ env_expand ^ ")\n" ^
         env_end ^ ":\n" ^
-        "\tPUSH(FPARG(1))\n" ^
+        "\tPUSH(FPARG(1))\n" ^                  (* push(n) *)
         "\tCALL(MALLOC)\n" ^
         "\tMOV(R3, R0)\n" ^                         (* R3 = MALLOC(n), 'param_copy' *)
         "\tDROP(1)\n" ^
@@ -1498,16 +1498,16 @@ let code_gen e =
         "\tPUSH(IMM(3))\n" ^
         "\tCALL(MALLOC)\n" ^
         "\tDROP(1)\n" ^                             (* NOT IN MAYER'S NOTES *)
-        "\tMOV(INDD(R0, 0), IMM(T_CLOSURE))\n" ^    (* attach the expanded environment to the closure *)
-        "\tMOV(INDD(R0, 1), R1)\n" ^
-        "\tMOV(INDD(R0, 2), LABEL(" ^ entrance ^ "))\n" ^
-        "\tJUMP(" ^ exit ^ ")\n" ^
-        entrance ^ ":\n" ^
-        "\tPUSH(FP)\n" ^
-        "\tMOV(FP, SP)\n" ^
-        "\t" ^ (run body (env_size + 1))^
-        "\tPOP(FP)\n" ^
-        "\tRETURN\n" ^
+        "\tMOV(INDD(R0, 0), IMM(T_CLOSURE))\n" ^    (* set the closure's type tag *)
+        "\tMOV(INDD(R0, 1), R1)\n" ^                (* attach the expanded environment to the closure *)
+        "\tMOV(INDD(R0, 2), LABEL(" ^ entrance ^ "))\n" ^ (* attach the body of the function to the closure *)
+        "\tJUMP(" ^ exit ^ ")\n" ^                        (* closure is built and its address is returned in R0 *)
+        entrance ^ ":\n" ^                                (* when the closure is applied, body execution starts here *)
+        "\tPUSH(FP)\n" ^                                  (* save old FP *)
+        "\tMOV(FP, SP)\n" ^                               (* set new FP *)
+        "\t" ^ (run body (env_size + 1))^                 (* execute the function's nody *)
+        "\tPOP(FP)\n" ^                                   (* restore old FP *)
+        "\tRETURN\n" ^                                    (* body's value is in R0, return to the calling stack frame *)
         exit ^ ":\n"
         in text
     (* | LambdaOpt' (params, optional, body) -> "lambda opt" *)
@@ -1527,7 +1527,7 @@ let code_gen e =
       "\tPOP(R1)\n" ^
       "\tDROP(R1)\n" ^
       exit ^ ":\n"
-    (* | ApplicTP' (operator, operands) -> "applit tp" *)
+    (* | ApplicTP' (operator, operands) -> "applic tp" *)
     | _ -> raise (X_why "codegen")
     in
   run e 0;;

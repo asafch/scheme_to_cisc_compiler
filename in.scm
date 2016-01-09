@@ -6,6 +6,8 @@
 
 #;'asfgdsfgsdfhgwghrwghwefh1835             ; just a symbol
 
+#; "string"                                 ; simple string
+
 #;1/3                                       ; fraction
 
 #;(if #t 1 2)                               ; if with 'else' clause
@@ -26,4 +28,6 @@
 
 #;(1 2 3)                                   ; applying non-procedure - ERROR
 
-((lambda (x y z) x y) 1 2 3)                          ; creating a lambda simple closure and applying it
+#;((lambda (x y z) x y) 1 2 3)              ; creating a lambda simple closure and applying it
+
+#;((lambda (x) ((lambda (y) ((lambda (z) z) y)) x)) 2)         ; tail position application - check the the env expansion works properly
