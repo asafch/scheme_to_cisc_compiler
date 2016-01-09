@@ -6,6 +6,7 @@
 
 #;'asfgdsfgsdfhgwghrwghwefh1835             ; just a symbol
 
+#;1/3                                       ; fraction
 
 #;(if #t 1 2)                               ; if with 'else' clause
 
@@ -23,4 +24,6 @@
 
 #;(or #f #f 'a)                             ; or with sub-expressions
 
-(1 2 3)                                     ; applying non-procedure - ERROR
+#;(1 2 3)                                   ; applying non-procedure - ERROR
+
+((lambda (x y z) x y) 1 2 3)                          ; creating a lambda simple closure and applying it
