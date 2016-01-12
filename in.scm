@@ -30,4 +30,8 @@
 
 #;((lambda (x y z) x y) 1 2 3)              ; creating a lambda simple closure and applying it
 
+#;((lambda (x y z) x y) 1 2)
+
+#;((lambda (x y z) x y) 1 2 3 4)
+
 #;((lambda (x) ((lambda (y) ((lambda (z) z) y)) x)) 2)         ; tail position application - check the the env expansion works properly

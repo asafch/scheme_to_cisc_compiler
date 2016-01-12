@@ -1505,6 +1505,9 @@ let code_gen e =
         entrance ^ ":\n" ^                                (* when the closure is applied, body execution starts here *)
         "\tPUSH(FP)\n" ^                                  (* save old FP *)
         "\tMOV(FP, SP)\n" ^                               (* set new FP *)
+        "MOV(R15, FPARG(1))" ^
+        "CMP(R15, IMM(" ^ string_of_int (List.length params) ^ "))" ^
+        "JUMP_NE(EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS)" ^
         "\t" ^ (run body (env_size + 1))^                 (* execute the function's nody *)
         "\tPOP(FP)\n" ^                                   (* restore old FP *)
         "\tRETURN\n" ^                                    (* body's value is in R0, return to the calling stack frame *)
@@ -1646,6 +1649,10 @@ int main()
 
 EXCPETION_APPLYING_NON_PROCEDURE:
   SHOW(\"Trying to apply a non-procedure: \", R0)
+  HALT
+
+EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS:
+  SHOW(\"Applying procedure on wrong number of parameters: \", FPARG(1))
   HALT
 
 CONTINUE:\n";;
