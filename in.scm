@@ -1,12 +1,16 @@
 #;'#('(4 5) (1 2))                          ; vector with quoted list and non-quoted list
 
-#;'("B" 3 'cake cookie)                     ; vector with quoted symbol and non-quoted symbol
+#;'#("B" 3 'cake cookie)                     ; vector with quoted symbol and non-quoted symbol
+
+#;'('''a)                                   ; quote madness
+
+#;'''''b                                    ; quote madness #2
 
 #;'("A")                                    ; vector with string - should remain a capital A and not a lowercase a
 
 #;'asfgdsfgsdfhgwghrwghwefh1835             ; just a symbol
 
-#; "string"                                 ; simple string
+#;"string"                                 ; simple string
 
 #;1/3                                       ; fraction
 
@@ -20,7 +24,7 @@
 
 #;`(1 ,@2 'k)                               ; quasiquote with unquote-splicing
 
-#;(begin 1 2 3)                             ; sequence
+(begin 1 2 3)                             ; sequence
 
 #;(or)                                      ; or without sub-expressions
 
@@ -30,8 +34,8 @@
 
 #;((lambda (x y z) x y) 1 2 3)              ; creating a lambda simple closure and applying it
 
-#;((lambda (x y z) x y) 1 2)
+#;((lambda (x y z) x y) 1 2)                  ; anonymous closure application on less arguments than required
 
-#;((lambda (x y z) x y) 1 2 3 4)
+#;((lambda (x y z) x y) 1 2 3 4)          ; anonymous closure application on more arguments than required
 
 #;((lambda (x) ((lambda (y) ((lambda (z) z) y)) x)) 2)         ; tail position application - check the the env expansion works properly

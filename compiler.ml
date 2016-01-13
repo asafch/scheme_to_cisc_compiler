@@ -1417,6 +1417,10 @@ let make_application_tp_labels =
 
 let const_table = ref [];;
 
+let symbol_table = ref [];;
+
+let free_var_table = ref [];;
+
 let code_gen e =
   let rec run expr' env_size =
     match expr' with
@@ -1565,6 +1569,7 @@ let pick_consts e =
 let expand_consts c =
   let rec expander c2 =
   match c2 with
+  | Symbol s -> [String s] @ [c2]
   | Pair (head, tail) -> expander head @ expander tail @ [(Pair (head, tail))]
   | Vector entries -> (List.flatten (List.map expander entries)) @ [Vector entries]
   | _ -> [c2]
@@ -1602,6 +1607,43 @@ let make_const_table lst =
                           const_table := !const_table @ [(e, k, [t_CHAR; Char.code c])]
               | String s -> let k = !counter in
                             counter := k + 2 + (String.length s);
+                            const_table := !const_table @ [(e, k, [t_STRING; String.length s] @ string_to_list_of_chars s)]
+              | Symbol s -> let k = !counter in
+                             counter := k + 2;
+                             const_table := !const_table @ [(e, k, [t_SYMBOL; lookup (String s) !const_table])]
+              | Pair (head, tail) -> let k = !counter in
+                                      counter := k + 3;
+                                      const_table := !const_table @ [(e, k, [t_PAIR; lookup head !const_table; lookup tail !const_table])]
+              | Vector entries -> let k = !counter in
+                                  counter := k + 2 + (List.length entries);
+                                  const_table := !const_table @ [(e, k, [t_VECTOR] @ vector_to_int_list entries)]
+              )
+            second_pass;;
+(*
+let make_free_var_table lst =
+  let prefix = [Void; Nil; Bool false; Bool true] in
+  let first_pass = List.map pick_consts lst in
+  let first_pass = List.flatten (purge_duplicates first_pass) in
+  let second_pass =  List.flatten (List.map expand_consts first_pass) in
+  let second_pass = purge_duplicates (prefix @ second_pass) in
+  let counter = ref(6) in
+  List.iter (fun e ->
+              match e with
+              | Void -> const_table := [(e, 0, [t_VOID])]
+              | Nil ->  const_table := !const_table @ [(e, 1, [t_NIL])]
+              | Bool false -> const_table := !const_table @ [(e, 2, [t_BOOL; 0])]
+              | Bool true ->  const_table := !const_table @ [(e, 4, [t_BOOL; 1])]
+              | Number (Int i) -> let k = !counter in
+                                  counter := k + 2;
+                                  const_table := !const_table @ [(e, k, [t_INTEGER; i])]
+              | Number (Fraction {numerator; denominator}) -> let k = !counter in
+                                                              counter := k + 3;
+                                                              const_table := !const_table @ [(e, k, [t_FRACTION; numerator; denominator])]
+              | Char c -> let k = !counter in
+                          counter := k + 2;
+                          const_table := !const_table @ [(e, k, [t_CHAR; Char.code c])]
+              | String s -> let k = !counter in
+                            counter := k + 2 + (String.length s);
                             const_table := !const_table @ [(e, k, [t_STRING] @ string_to_list_of_chars s)]
               | Symbol s -> let k = !counter in
                              counter := k + 2 + (String.length s);
@@ -1613,11 +1655,27 @@ let make_const_table lst =
                                   counter := k + 2 + (List.length entries);
                                   const_table := !const_table @ [(e, k, [t_VECTOR] @ vector_to_int_list entries)]
               )
-            second_pass;;
+            second_pass;; *)
 
 let length_of_const_table = ref 0;;
 
+let length_of_symbol_table = ref 0;;
+
+let length_of_free_var_table = ref 0;;
+
 let measure_length_of_const_table () =
+  length_of_const_table :=
+                          List.fold_right (fun (v, addr, vals) acc -> List.length vals + acc)
+                                          !const_table
+                                          0;;
+
+let measure_length_of_symbol_table () =
+  length_of_const_table :=
+                          List.fold_right (fun (v, addr, vals) acc -> List.length vals + acc)
+                                          !const_table
+                                          0;;
+
+let measure_length_of_free_var_table () =
   length_of_const_table :=
                           List.fold_right (fun (v, addr, vals) acc -> List.length vals + acc)
                                           !const_table
@@ -1648,11 +1706,11 @@ int main()
   #include \"system.lib\"
 
 EXCPETION_APPLYING_NON_PROCEDURE:
-  SHOW(\"Trying to apply a non-procedure: \", R0)
+  printf(\"Exception: trying to apply a non-procedure\\n\");
   HALT
 
 EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS:
-  SHOW(\"Applying procedure on wrong number of parameters: \", FPARG(1))
+  printf(\"Ecxeption: applying closure on wrong number of argumens, given: %ld\\n\", FPARG(1));
   HALT
 
 CONTINUE:\n";;
@@ -1692,14 +1750,8 @@ let const_table_to_string () =
                                             ""
                           in prefix ^ suffix
                         | Symbol s ->
-                          let s_length = String.length s in
-                          let prefix = "\tMOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), IMM(T_SYMBOL))\n\tMOV(ADDR(MEM_START + " ^ string_of_int addr ^ " + 1), IMM(" ^ string_of_int s_length ^ "))\n" in
-                          let index = ref(-2) in
-                          let suffix =
-                            List.fold_right (fun c prev -> index := !index + 1; "\tMOV(ADDR(MEM_START + " ^ string_of_int addr ^ " + " ^ string_of_int (s_length - !index) ^ "), IMM('" ^ char_to_string c ^ "'))\n" ^ prev)
-                                            (string_to_list_of_chars s)
-                                            ""
-                          in prefix ^ suffix
+                          let print_form_addr = string_of_int (List.nth vals 1) in
+                          "\tMOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), IMM(T_SYMBOL))\n\tMOV(ADDR(MEM_START + " ^ string_of_int addr ^ " + 1), IMM(MEM_START + " ^ print_form_addr ^ "))\n"
                         | Pair (head, tail) -> "\tMOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), IMM(T_PAIR))\n\tMOV(ADDR(MEM_START + " ^ string_of_int (addr + 1) ^ "), IMM(MEM_START + " ^ string_of_int (List.nth vals 1) ^ "))\n\tMOV(ADDR(MEM_START + " ^ string_of_int (addr + 2) ^ "), IMM(MEM_START + " ^ string_of_int (List.nth vals 2) ^ "))\n"
                         | Vector entries ->
                           let vec_length = List.length entries in
@@ -1723,6 +1775,9 @@ let compile_scheme_file scm_source_file asm_target_file =
   begin
     make_const_table file_as_expr'_list;
     measure_length_of_const_table ();
+    (* !const_table *)
+    (* make_free_var_table file_as_expr'_list; *)
+    measure_length_of_free_var_table ();
     let code_as_list = List.map code_gen file_as_expr'_list in
     let code = List.fold_right (fun code prev_code -> code ^ prev_code)
                                 code_as_list

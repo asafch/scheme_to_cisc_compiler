@@ -22,15 +22,15 @@ int main()
   #include "system.lib"
 
 EXCPETION_APPLYING_NON_PROCEDURE:
-  SHOW("Trying to apply a non-procedure: ", R0)
+  printf("Exception: trying to apply a non-procedure\n");
   HALT
 
 EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS:
-  SHOW("Applying procedure on wrong number of parameters: ", FPARG(1))
+  printf("Ecxeption: applying closure on wrong number of argumens, given: %ld\n", FPARG(1));
   HALT
 
 CONTINUE:
-	PUSH(IMM(10))
+	PUSH(IMM(12))
 	CALL(MALLOC)
 	DROP(1)
 	MOV(ADDR(MEM_START), IMM(T_VOID))
@@ -43,71 +43,15 @@ CONTINUE:
 	MOV(ADDR(MEM_START + 7), IMM(1))
 	MOV(ADDR(MEM_START + 8), IMM(T_INTEGER))
 	MOV(ADDR(MEM_START + 9), IMM(2))
+	MOV(ADDR(MEM_START + 10), IMM(T_INTEGER))
+	MOV(ADDR(MEM_START + 11), IMM(3))
 
-L_applic_2:
 	MOV(R0, IMM(MEM_START + 6))
-	PUSH(R0)
+
 	MOV(R0, IMM(MEM_START + 8))
-	PUSH(R0)
-	PUSH(IMM(2))
-L_simple_env_expansion_2:
-	PUSH(IMM(1))
-	CALL(MALLOC)
-	MOV(R1, R0)
-	DROP(1)
-	MOV(R2, FPARG(0))
-	MOV(R3, IMM(0))
-	MOV(R4, IMM(1))
-L_simple_env_expand_2:
-	CMP(R3, 0)
-	JUMP_EQ(L_simple_env_expand_end_2)
-	MOV(R5, INDD(R2, R3))
-	MOV(INDD(R1, R4), R5)
-	INCR(R3)
-	INCR(R4)
-	JUMP(L_simple_env_expand_2)
-L_simple_env_expand_end_2:
-	PUSH(FPARG(1))
-	CALL(MALLOC)
-	MOV(R3, R0)
-	DROP(1)
-	MOV(R4, IMM(2))
-	MOV(R5, FPARG(1))
-	ADD(R5, IMM(2))
-L_simple_param_copy_2:
-	CMP(R4, R5)
-	JUMP_EQ(L_simple_param_copy_end_2)
-	MOV(R6, FPARG(R4))
-	MOV(INDD(R3, R4), R6)
-	INCR(R4)
-	JUMP(L_simple_param_copy_2)
-L_simple_param_copy_end_2:
-	MOV(INDD(R1, 0), R3)
-	PUSH(IMM(3))
-	CALL(MALLOC)
-	DROP(1)
-	MOV(INDD(R0, 0), IMM(T_CLOSURE))
-	MOV(INDD(R0, 1), R1)
-	MOV(INDD(R0, 2), LABEL(L_lambda_simple_2))
-	JUMP(L_lambda_simple_end_2)
-L_lambda_simple_2:
-	PUSH(FP)
-	MOV(FP, SP)
-MOV(R15, FPARG(1))CMP(R15, IMM(3))JUMP_NE(EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS)	MOV(R0, FPARG(0 + 2))
 
-MOV(R0, FPARG(1 + 2))
+	MOV(R0, IMM(MEM_START + 10))
 
-	POP(FP)
-	RETURN
-L_lambda_simple_end_2:
-	CMP(IND(R0), IMM(T_CLOSURE))
-	JUMP_NE(EXCPETION_APPLYING_NON_PROCEDURE)
-	PUSH(INDD(R0, 1))
-	CALLA(INDD(R0, 2))
-	POP(R1)
-	POP(R1)
-	DROP(R1)
-L_lapplic_end_2:
 
   PUSH(R0)
   CALL(WRITE_SOB)

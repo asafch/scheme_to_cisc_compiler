@@ -1,0 +1,1 @@
+symbol->string : consider deep copy vs. shallow copy. Mayers suggetsts using shallow copy.
