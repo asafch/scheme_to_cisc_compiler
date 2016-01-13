@@ -1356,14 +1356,24 @@ let string_to_file output_file out_string =
   ( output_string out_channel out_string;
     close_out out_channel );;
 
-let lookup c lst =
+let const_lookup c lst =
   let rec finder lst2 =
     match lst2 with
-    | [] -> raise (X_why "kaki")
+    | [] -> raise (X_why "lookup: const not found in const_table")
     | (c2, addr, vals) :: tail -> if c2 = c then
                                     addr
                                   else
                                     finder tail
+  in finder lst;;
+
+let free_var_lookup v lst =
+  let rec finder lst2 =
+    match lst2 with
+    | [] -> raise (X_why "lookup: free_Var not found in free_var_table")
+    | (var, addr) :: tail -> if v = var then
+                                addr
+                              else
+                                finder tail
   in finder lst;;
 
 let make_make_label name =
@@ -1424,11 +1434,11 @@ let free_var_table = ref [];;
 let code_gen e =
   let rec run expr' env_size =
     match expr' with
-    | Const' c -> "\tMOV(R0, IMM(MEM_START + " ^ string_of_int (lookup c !const_table) ^ "))\n"
+    | Const' c -> "\tMOV(R0, IMM(MEM_START + " ^ string_of_int (const_lookup c !const_table) ^ "))\n"
     | Var' v ->
       begin
         match v with
-        | VarFree' var -> "varfree"
+        | VarFree' var -> "\tMOV(R0, INDD(FREE_VAR_TAB_START, " ^ string_of_int (free_var_lookup (Var' v) !free_var_table) ^ "))\n"
         | VarParam' (var, minor) -> "MOV(R0, FPARG(" ^ string_of_int minor ^ " + 2))\n"
         | VarBound' (var, major, minor) -> "\tMOV(R0, FPARG(0))\n
                                             \tMOV(R0, INDD(R0, " ^ string_of_int major ^ "))\n
@@ -1451,7 +1461,9 @@ let code_gen e =
       List.fold_right (fun curr prev -> (run curr env_size) ^ "\n" ^ prev)
                       exprs'
                       ""
-    (* | Def' (var, value) -> "define" *)
+    | Def' (var, value) ->
+      (run value env_size) ^
+      "\tMOV(R0, IMM(FREE_VAR_TAB_START + " ^ string_of_int (free_var_lookup var !free_var_table) ^ "))\n"
     | Or' exprs' ->
       let (entrance, exit) = make_or_labels () in
       entrance ^ ":\n" ^
@@ -1509,9 +1521,9 @@ let code_gen e =
         entrance ^ ":\n" ^                                (* when the closure is applied, body execution starts here *)
         "\tPUSH(FP)\n" ^                                  (* save old FP *)
         "\tMOV(FP, SP)\n" ^                               (* set new FP *)
-        "MOV(R15, FPARG(1))" ^
-        "CMP(R15, IMM(" ^ string_of_int (List.length params) ^ "))" ^
-        "JUMP_NE(EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS)" ^
+        "\tMOV(R15, FPARG(1))\n" ^
+        "\tCMP(R15, IMM(" ^ string_of_int (List.length params) ^ "))\n" ^
+        "\tJUMP_NE(EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS)\n" ^
         "\t" ^ (run body (env_size + 1))^                 (* execute the function's nody *)
         "\tPOP(FP)\n" ^                                   (* restore old FP *)
         "\tRETURN\n" ^                                    (* body's value is in R0, return to the calling stack frame *)
@@ -1581,7 +1593,7 @@ let string_to_list_of_chars str =
             (string_to_list str);;
 
 let vector_to_int_list entries =
-  List.map (fun entry -> lookup entry !const_table) entries
+  List.map (fun entry -> const_lookup entry !const_table) entries
 
 let make_const_table lst =
   let prefix = [Void; Nil; Bool false; Bool true] in
@@ -1610,85 +1622,67 @@ let make_const_table lst =
                             const_table := !const_table @ [(e, k, [t_STRING; String.length s] @ string_to_list_of_chars s)]
               | Symbol s -> let k = !counter in
                              counter := k + 2;
-                             const_table := !const_table @ [(e, k, [t_SYMBOL; lookup (String s) !const_table])]
+                             const_table := !const_table @ [(e, k, [t_SYMBOL; const_lookup (String s) !const_table])]
               | Pair (head, tail) -> let k = !counter in
                                       counter := k + 3;
-                                      const_table := !const_table @ [(e, k, [t_PAIR; lookup head !const_table; lookup tail !const_table])]
+                                      const_table := !const_table @ [(e, k, [t_PAIR; const_lookup head !const_table; const_lookup tail !const_table])]
               | Vector entries -> let k = !counter in
                                   counter := k + 2 + (List.length entries);
-                                  const_table := !const_table @ [(e, k, [t_VECTOR] @ vector_to_int_list entries)]
+                                  const_table := !const_table @ [(e, k, [t_VECTOR; List.length entries] @ vector_to_int_list entries)]
               )
             second_pass;;
-(*
+
 let make_free_var_table lst =
-  let prefix = [Void; Nil; Bool false; Bool true] in
-  let first_pass = List.map pick_consts lst in
-  let first_pass = List.flatten (purge_duplicates first_pass) in
-  let second_pass =  List.flatten (List.map expand_consts first_pass) in
-  let second_pass = purge_duplicates (prefix @ second_pass) in
-  let counter = ref(6) in
-  List.iter (fun e ->
-              match e with
-              | Void -> const_table := [(e, 0, [t_VOID])]
-              | Nil ->  const_table := !const_table @ [(e, 1, [t_NIL])]
-              | Bool false -> const_table := !const_table @ [(e, 2, [t_BOOL; 0])]
-              | Bool true ->  const_table := !const_table @ [(e, 4, [t_BOOL; 1])]
-              | Number (Int i) -> let k = !counter in
-                                  counter := k + 2;
-                                  const_table := !const_table @ [(e, k, [t_INTEGER; i])]
-              | Number (Fraction {numerator; denominator}) -> let k = !counter in
-                                                              counter := k + 3;
-                                                              const_table := !const_table @ [(e, k, [t_FRACTION; numerator; denominator])]
-              | Char c -> let k = !counter in
-                          counter := k + 2;
-                          const_table := !const_table @ [(e, k, [t_CHAR; Char.code c])]
-              | String s -> let k = !counter in
-                            counter := k + 2 + (String.length s);
-                            const_table := !const_table @ [(e, k, [t_STRING] @ string_to_list_of_chars s)]
-              | Symbol s -> let k = !counter in
-                             counter := k + 2 + (String.length s);
-                             const_table := !const_table @ [(e, k, [t_SYMBOL] @ string_to_list_of_chars s)]
-              | Pair (head, tail) -> let k = !counter in
-                                      counter := k + 3;
-                                      const_table := !const_table @ [(e, k, [t_PAIR; lookup head !const_table; lookup tail !const_table])]
-              | Vector entries -> let k = !counter in
-                                  counter := k + 2 + (List.length entries);
-                                  const_table := !const_table @ [(e, k, [t_VECTOR] @ vector_to_int_list entries)]
-              )
-            second_pass;; *)
+  let prefix = [Var' (VarFree' "append"); Var' (VarFree' "apply"); Var' (VarFree' "<"); Var' (VarFree' "="); Var' (VarFree' ">");
+                Var' (VarFree' "+"); Var' (VarFree' "/"); Var' (VarFree' "*"); Var' (VarFree' "-"); Var' (VarFree' "boolean?");
+                Var' (VarFree' "car"); Var' (VarFree' "cdr"); Var' (VarFree' "char->integer"); Var' (VarFree' "char?"); Var' (VarFree' "cons");
+                Var' (VarFree' "denominator"); Var' (VarFree' "eq?"); Var' (VarFree' "integer?"); Var' (VarFree' "integer->char");
+                Var' (VarFree' "list"); Var' (VarFree' "make-string"); Var' (VarFree' "make-vector"); Var' (VarFree' "map"); Var' (VarFree' "not");
+                Var' (VarFree' "null?"); Var' (VarFree' "number?"); Var' (VarFree' "numerator"); Var' (VarFree' "pair?"); Var' (VarFree' "procedure?");
+                Var' (VarFree' "rational?"); Var' (VarFree' "remainder"); Var' (VarFree' "set-car!"); Var' (VarFree' "set-cdr!"); Var' (VarFree' "string-length");
+                Var' (VarFree' "string-ref"); Var' (VarFree' "string-set!"); Var' (VarFree' "string->symbol"); Var' (VarFree' "string?"); Var' (VarFree' "symbol?");
+                Var' (VarFree' "symbol->string"); Var' (VarFree' "vector"); Var' (VarFree' "vector-length"); Var' (VarFree' "vector-ref"); Var' (VarFree' "vector-set!");
+                Var' (VarFree' "vector?"); Var' (VarFree' "zero?")] in
+  let pass = List.filter (fun e -> match e with
+                                    | Def' (var, value) -> true
+                                    | _ -> false
+                          )
+                          lst in
+  let pass = List.map (fun (Def' (var, value)) -> var) pass in
+  let pass = purge_duplicates (prefix @ pass) in
+  List.iteri (fun i e -> free_var_table := !free_var_table @ [(e, i)]) pass;;
 
-let length_of_const_table = ref 0;;
+let const_tab_length = ref 0;;
 
-let length_of_symbol_table = ref 0;;
+let symbol_tab_length = ref 0;;
 
-let length_of_free_var_table = ref 0;;
+let free_var_tab_length = ref 0;;
 
-let measure_length_of_const_table () =
-  length_of_const_table :=
+let measure_const_tab_length () =
+  const_tab_length :=
                           List.fold_right (fun (v, addr, vals) acc -> List.length vals + acc)
                                           !const_table
                                           0;;
 
-let measure_length_of_symbol_table () =
-  length_of_const_table :=
+let measure_symbol_tab_length () =
+  const_tab_length :=
                           List.fold_right (fun (v, addr, vals) acc -> List.length vals + acc)
                                           !const_table
                                           0;;
 
-let measure_length_of_free_var_table () =
-  length_of_const_table :=
-                          List.fold_right (fun (v, addr, vals) acc -> List.length vals + acc)
-                                          !const_table
-                                          0;;
+let measure_free_var_tab_length () =
+  const_tab_length := List.length !free_var_table;;
 
-let prologue =
+let make_prologue () =
 "
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 /* change to 0 for no debug info to be printed: */
 #define DO_SHOW 1
-#define MEM_START 1
+#define MEM_START 2
+#define FREE_VAR_TAB_START (MEM_START + " ^ string_of_int !const_tab_length ^ ")
 
 #include \"cisc.h\"
 
@@ -1730,7 +1724,7 @@ let epilogue =
 let char_to_string c =
   Char.escaped (Char.chr c);;
 
-let const_table_to_string () =
+(* let const_table_to_string () =
   List.fold_right (fun (c, addr, vals) prev ->
                       let curr =
                         match c with
@@ -1758,7 +1752,7 @@ let const_table_to_string () =
                           let prefix = "\tMOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), IMM(T_VECTOR))\n\tMOV(ADDR(MEM_START + " ^ string_of_int addr ^ " + 1), IMM(" ^ string_of_int vec_length ^ "))\n" in
                           let index = ref(-2) in
                           let suffix =
-                            List.fold_right (fun c prev -> index := !index + 1; "\tMOV(ADDR(MEM_START + " ^ string_of_int addr ^ " + " ^ string_of_int (vec_length - !index) ^ "), IMM(MEM_START + " ^ (string_of_int (lookup (List.nth entries (vec_length - 2 - !index)) !const_table)) ^ "))\n" ^ prev)
+                            List.fold_right (fun c prev -> index := !index + 1; "\tMOV(ADDR(MEM_START + " ^ string_of_int addr ^ " + " ^ string_of_int (vec_length - !index) ^ "), IMM(MEM_START + " ^ (string_of_int (const_lookup (List.nth entries (vec_length - 2 - !index)) !const_table)) ^ "))\n" ^ prev)
                                             entries
                                             ""
                           in prefix ^ suffix
@@ -1766,7 +1760,43 @@ let const_table_to_string () =
                       curr ^ prev
                     )
                   !const_table
-                  "\n";;
+                  "\n";; *)
+
+let const_table_to_string () =
+  "\tlong consts[" ^ string_of_int !const_tab_length ^ "] = {T_VOID" ^
+  List.fold_right (fun (c, addr, vals) prev ->
+                      let curr =
+                        match c with
+                        | Void -> raise (X_why "const tab construction: encountered Void")
+                        | Nil -> ", T_NIL\n"
+                        | Bool b -> ", T_BOOL, " ^ string_of_int (List.nth vals 1) ^ "\n"
+                        | Char c -> ", T_CHAR, " ^ string_of_int (Char.code c) ^ "\n"
+                        | Number (Int i) -> ", T_INTEGER, " ^ string_of_int i ^ "\n"
+                        | Number (Fraction {numerator; denominator}) -> ", T_FRACTION, " ^ string_of_int numerator ^ ", " ^ string_of_int denominator ^ "\n"
+                        | String s ->
+                          let s_length = String.length s in
+                          let prefix = ", T_STRING, " ^ string_of_int s_length in
+                          let suffix =
+                            List.fold_right (fun c prev -> ", '" ^ (char_to_string c) ^ "'" ^ prev)
+                                            (string_to_list_of_chars s)
+                                            ""
+                          in prefix ^ suffix
+                        | Symbol s -> ", T_SYMBOL, MEM_START + " ^ string_of_int (List.nth vals 1) ^ "\n"
+                        | Pair (head, tail) -> ", T_PAIR, MEM_START + " ^ string_of_int (List.nth vals 1) ^ ", MEM_START + " ^ string_of_int (List.nth vals 2) ^ "\n"
+                        | Vector entries ->
+                          let vec_length = List.length entries in
+                          let prefix = ", T_VECTOR, " ^ string_of_int vec_length in
+                          let index = ref(0) in
+                          let suffix =
+                            List.fold_right (fun e prev -> index := !index + 1; ", MEM_START + " ^ (string_of_int (const_lookup (List.nth entries (vec_length - !index)) !const_table)) ^ prev)
+                                            entries
+                                            ""
+                          in prefix ^ suffix
+                      in
+                      curr ^ prev
+                    )
+                  (List.tl !const_table)
+                  "};\n\n";;
 
 let compile_scheme_file scm_source_file asm_target_file =
   let file_as_string = file_to_string scm_source_file in
@@ -1774,17 +1804,17 @@ let compile_scheme_file scm_source_file asm_target_file =
                                     (Tag_Parser.read_expressions file_as_string) in
   begin
     make_const_table file_as_expr'_list;
-    measure_length_of_const_table ();
-    (* !const_table *)
-    (* make_free_var_table file_as_expr'_list; *)
-    measure_length_of_free_var_table ();
+    measure_const_tab_length ();
+    make_free_var_table file_as_expr'_list;
+    (* measure_free_var_tab_length (); *)
     let code_as_list = List.map code_gen file_as_expr'_list in
     let code = List.fold_right (fun code prev_code -> code ^ prev_code)
                                 code_as_list
                                 "" in
-    string_to_file asm_target_file (prologue ^
-                                    "\tPUSH(IMM(" ^ (string_of_int !length_of_const_table) ^ "))\n\tCALL(MALLOC)\n\tDROP(1)\n" ^
+    string_to_file asm_target_file (make_prologue () ^
+                                    "\tPUSH(IMM(" ^ (string_of_int !const_tab_length) ^ "))\n\tCALL(MALLOC)\n\tDROP(1)\n" ^
                                     const_table_to_string () ^
+                                    "\tmemcpy(M(mem) + 1, consts, sizeof(long) * " ^ string_of_int !const_tab_length ^ ");\n\n" ^
                                     code ^
                                     epilogue)
   end
@@ -1793,7 +1823,7 @@ end;;
 (* #trace Code_Gen.compile_scheme_file;; *)
 (* #trace Code_Gen.const_table_to_string;; *)
 (* #trace Code_Gen.char_to_string;; *)
-(* #trace Code_Gen.measure_length_of_const_table;; *)
+(* #trace Code_Gen.measure_const_tab_length;; *)
 (* #trace Code_Gen.make_const_table;; *)
 (* #trace Code_Gen.vector_to_int_list;; *)
 (* #trace Code_Gen.string_to_list_of_chars;; *)
@@ -1801,6 +1831,6 @@ end;;
 (* #trace Code_Gen.pick_consts;; *)
 (* #trace Code_Gen.purge_duplicates;; *)
 (* #trace Code_Gen.code_gen;; *)
-(* #trace Code_Gen.lookup;; *)
+(* #trace Code_Gen.const_lookup;; *)
 (* #trace Code_Gen.file_to_string;; *)
 (* #trace Code_Gen.string_to_file;; *)

@@ -1,6 +1,8 @@
 #;'#('(4 5) (1 2))                          ; vector with quoted list and non-quoted list
 
-#;'#("B" 3 'cake cookie)                     ; vector with quoted symbol and non-quoted symbol
+'#("B" 3 'cake cookie)                     ; vector with quoted symbol and non-quoted symbol
+
+#; '(1 2 3 4 4 5 6 7 8 9 10 11 12 13 (14 15 (16)) 17 18 19 20) ;115 constants
 
 #;'('''a)                                   ; quote madness
 
@@ -24,7 +26,7 @@
 
 #;`(1 ,@2 'k)                               ; quasiquote with unquote-splicing
 
-(begin 1 2 3)                             ; sequence
+#;(begin 1 2 3)                             ; sequence
 
 #;(or)                                      ; or without sub-expressions
 
@@ -39,3 +41,7 @@
 #;((lambda (x y z) x y) 1 2 3 4)          ; anonymous closure application on more arguments than required
 
 #;((lambda (x) ((lambda (y) ((lambda (z) z) y)) x)) 2)         ; tail position application - check the the env expansion works properly
+
+#;(define foo (lambda (x) x))
+
+#;(foo 5)

@@ -1,10 +1,12 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 /* change to 0 for no debug info to be printed: */
 #define DO_SHOW 1
-#define MEM_START 1
+#define MEM_START 2
+#define FREE_VAR_TAB_START (MEM_START + 50)
 
 #include "cisc.h"
 
@@ -30,28 +32,23 @@ EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS:
   HALT
 
 CONTINUE:
-	PUSH(IMM(12))
+	PUSH(IMM(50))
 	CALL(MALLOC)
 	DROP(1)
-	MOV(ADDR(MEM_START), IMM(T_VOID))
-	MOV(ADDR(MEM_START + 1), IMM(T_NIL))
-	MOV(ADDR(MEM_START + 2), IMM(T_BOOL))
-	MOV(ADDR(MEM_START + 3), IMM(0))
-	MOV(ADDR(MEM_START + 4), IMM(T_BOOL))
-	MOV(ADDR(MEM_START + 5), IMM(1))
-	MOV(ADDR(MEM_START + 6), IMM(T_INTEGER))
-	MOV(ADDR(MEM_START + 7), IMM(1))
-	MOV(ADDR(MEM_START + 8), IMM(T_INTEGER))
-	MOV(ADDR(MEM_START + 9), IMM(2))
-	MOV(ADDR(MEM_START + 10), IMM(T_INTEGER))
-	MOV(ADDR(MEM_START + 11), IMM(3))
+	long consts[50] = {T_VOID, T_NIL
+, T_BOOL, 0
+, T_BOOL, 1
+, T_STRING, 1, 'B', T_INTEGER, 3
+, T_STRING, 5, 'q', 'u', 'o', 't', 'e', T_SYMBOL, MEM_START + 11
+, T_STRING, 4, 'c', 'a', 'k', 'e', T_SYMBOL, MEM_START + 20
+, T_PAIR, MEM_START + 26, MEM_START + 1
+, T_PAIR, MEM_START + 18, MEM_START + 28
+, T_STRING, 6, 'c', 'o', 'o', 'k', 'i', 'e', T_SYMBOL, MEM_START + 34
+, T_VECTOR, 4, MEM_START + 6, MEM_START + 9, MEM_START + 31, MEM_START + 42};
 
-	MOV(R0, IMM(MEM_START + 6))
-
-	MOV(R0, IMM(MEM_START + 8))
-
-	MOV(R0, IMM(MEM_START + 10))
-
+	memcpy(M(mem) + 1, consts, sizeof(long) * 50);
+printf("%p:%p:%ld", machine->mem ,&machine->mem, machine->mem[0]);
+	MOV(R0, IMM(MEM_START + 44))
 
   PUSH(R0)
   CALL(WRITE_SOB)
