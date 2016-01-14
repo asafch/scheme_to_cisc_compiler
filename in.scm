@@ -34,7 +34,7 @@
 
 #;(1 2 3)                                   ; applying non-procedure - ERROR
 
-#;((lambda (x y z) x y) 1 2 3)              ; creating a lambda simple closure and applying it
+#;((lambda (x y z) x y) 1 5 3)              ; creating a lambda simple closure and applying it
 
 #;((lambda (x y z) x y) 1 2)                  ; anonymous closure application on less arguments than required
 

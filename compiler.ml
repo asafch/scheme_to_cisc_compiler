@@ -1698,6 +1698,7 @@ int main()
   #include \"scheme.lib\"
   #include \"string.lib\"
   #include \"system.lib\"
+  #include \"debug.h\"
 
 EXCPETION_APPLYING_NON_PROCEDURE:
   printf(\"Exception: trying to apply a non-procedure\\n\");
@@ -1812,9 +1813,9 @@ let compile_scheme_file scm_source_file asm_target_file =
                                 code_as_list
                                 "" in
     string_to_file asm_target_file (make_prologue () ^
-                                    "\tPUSH(IMM(" ^ (string_of_int !const_tab_length) ^ "))\n\tCALL(MALLOC)\n\tDROP(1)\n" ^
+                                    "\tPUSH(IMM(1 + " ^ (string_of_int !const_tab_length) ^ "))\n\tCALL(MALLOC)\n\tDROP(1)\n" ^
                                     const_table_to_string () ^
-                                    "\tmemcpy(M(mem) + 1, consts, sizeof(long) * " ^ string_of_int !const_tab_length ^ ");\n\n" ^
+                                    "\tmemcpy(M(mem) + MEM_START, consts, sizeof(long) * " ^ string_of_int !const_tab_length ^ ");\n\n" ^
                                     code ^
                                     epilogue)
   end

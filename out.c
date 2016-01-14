@@ -22,6 +22,7 @@ int main()
   #include "scheme.lib"
   #include "string.lib"
   #include "system.lib"
+  #include "debug.h"
 
 EXCPETION_APPLYING_NON_PROCEDURE:
   printf("Exception: trying to apply a non-procedure\n");
@@ -32,7 +33,7 @@ EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS:
   HALT
 
 CONTINUE:
-	PUSH(IMM(50))
+	PUSH(IMM(1 + 50))
 	CALL(MALLOC)
 	DROP(1)
 	long consts[50] = {T_VOID, T_NIL
@@ -46,8 +47,8 @@ CONTINUE:
 , T_STRING, 6, 'c', 'o', 'o', 'k', 'i', 'e', T_SYMBOL, MEM_START + 34
 , T_VECTOR, 4, MEM_START + 6, MEM_START + 9, MEM_START + 31, MEM_START + 42};
 
-	memcpy(M(mem) + 1, consts, sizeof(long) * 50);
-printf("%p:%p:%ld", machine->mem ,&machine->mem, machine->mem[0]);
+	memcpy(M(mem) + MEM_START, consts, sizeof(long) * 50);
+
 	MOV(R0, IMM(MEM_START + 44))
 
   PUSH(R0)
