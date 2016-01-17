@@ -1359,7 +1359,7 @@ let string_to_file output_file out_string =
 let const_lookup c lst =
   let rec finder lst2 =
     match lst2 with
-    | [] -> raise (X_why "lookup: const not found in const_table")
+    | [] -> raise (X_why "const_lookup: const not found in const_table")
     | (c2, addr, vals) :: tail -> if c2 = c then
                                     addr
                                   else
@@ -1369,7 +1369,7 @@ let const_lookup c lst =
 let free_var_lookup v lst =
   let rec finder lst2 =
     match lst2 with
-    | [] -> raise (X_why "lookup: free_Var not found in free_var_table")
+    | [] -> raise (X_why "free_var_lookup: free_var not found in free_var_table")
     | (var, addr) :: tail -> if v = var then
                                 addr
                               else
@@ -1463,7 +1463,7 @@ let code_gen e =
                       ""
     | Def' (var, value) ->
       (run value env_size) ^
-      "\tMOV(R0, IMM(FREE_VAR_TAB_START + " ^ string_of_int (free_var_lookup var !free_var_table) ^ "))\n"
+      "\tMOV(IND(FREE_VAR_TAB_START + " ^ string_of_int (free_var_lookup var !free_var_table) ^ "), R0)\n"
     | Or' exprs' ->
       let (entrance, exit) = make_or_labels () in
       entrance ^ ":\n" ^
@@ -1534,7 +1534,7 @@ let code_gen e =
       let (entrance, exit) = make_application_labels () in
       entrance ^ ":\n" ^
       (List.fold_right (fun operand prev -> (run operand env_size) ^ "\tPUSH(R0)\n" ^ prev)
-                      operands
+                      (List.rev operands)
                       "") ^
       "\tPUSH(IMM(" ^ string_of_int (List.length operands) ^ "))\n" ^
       (run operator env_size) ^
@@ -1652,11 +1652,16 @@ let make_free_var_table lst =
   let pass = purge_duplicates (prefix @ pass) in
   List.iteri (fun i e -> free_var_table := !free_var_table @ [(e, i)]) pass;;
 
+let make_symbol_table () =
+  let symbols = List.filter (fun (c, addr, vals) -> match c with
+                                                    | Symbol s -> true
+                                                    | _ -> false)
+                            !const_table in
+  symbol_table := List.map (fun (c, addr, vals) -> addr) symbols;;
+
 let const_tab_length = ref 0;;
 
 let symbol_tab_length = ref 0;;
-
-let free_var_tab_length = ref 0;;
 
 let measure_const_tab_length () =
   const_tab_length :=
@@ -1664,104 +1669,8 @@ let measure_const_tab_length () =
                                           !const_table
                                           0;;
 
-let measure_symbol_tab_length () =
-  const_tab_length :=
-                          List.fold_right (fun (v, addr, vals) acc -> List.length vals + acc)
-                                          !const_table
-                                          0;;
-
-let measure_free_var_tab_length () =
-  const_tab_length := List.length !free_var_table;;
-
-let make_prologue () =
-"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-/* change to 0 for no debug info to be printed: */
-#define DO_SHOW 1
-#define MEM_START 2
-#define FREE_VAR_TAB_START (MEM_START + " ^ string_of_int !const_tab_length ^ ")
-
-#include \"cisc.h\"
-
-int main()
-{
-
-  START_MACHINE
-  JUMP(CONTINUE)
-
-  #include \"char.lib\"
-  #include \"io.lib\"
-  #include \"math.lib\"
-  #include \"scheme.lib\"
-  #include \"string.lib\"
-  #include \"system.lib\"
-  #include \"debug.h\"
-
-EXCPETION_APPLYING_NON_PROCEDURE:
-  printf(\"Exception: trying to apply a non-procedure\\n\");
-  HALT
-
-EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS:
-  printf(\"Ecxeption: applying closure on wrong number of argumens, given: %ld\\n\", FPARG(1));
-  HALT
-
-CONTINUE:\n";;
-
-let epilogue =
-  "
-  PUSH(R0)
-  CALL(WRITE_SOB)
-  PUSH(IMM('\\n'))
-  CALL(PUTCHAR)
-  DROP(2)
-  STOP_MACHINE
-
-  return 0;
-}";;
-
 let char_to_string c =
   Char.escaped (Char.chr c);;
-
-(* let const_table_to_string () =
-  List.fold_right (fun (c, addr, vals) prev ->
-                      let curr =
-                        match c with
-                        | Void -> "\tMOV(ADDR(MEM_START), IMM(T_VOID))\n"
-                        | Nil -> "\tMOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), IMM(T_NIL))\n"
-                        | Bool b -> "\tMOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), IMM(T_BOOL))\n\tMOV(ADDR(MEM_START + " ^ string_of_int (addr + 1) ^ "), IMM(" ^ string_of_int (List.nth vals 1) ^ "))\n"
-                        | Char c -> "\tMOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), IMM(T_CHAR))\n\tMOV(ADDR(MEM_START + " ^ string_of_int (addr + 1) ^ "), IMM('" ^ char_to_string (List.nth vals 1) ^ "'))\n"
-                        | Number (Int i) -> "\tMOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), IMM(T_INTEGER))\n\tMOV(ADDR(MEM_START + " ^ string_of_int (addr + 1) ^ "), IMM(" ^ string_of_int (List.nth vals 1) ^ "))\n"
-                        | Number (Fraction f) -> "\tMOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), IMM(T_FRACTION))\n\tMOV(ADDR(MEM_START + " ^ string_of_int (addr + 1) ^ "), IMM(" ^ string_of_int (List.nth vals 1) ^ "))\n\tMOV(ADDR(MEM_START + " ^ string_of_int (addr + 2) ^ "), IMM(" ^ string_of_int (List.nth vals 2) ^ "))\n"
-                        | String s ->
-                          let s_length = String.length s in
-                          let prefix = "\tMOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), IMM(T_STRING))\n\tMOV(ADDR(MEM_START + " ^ string_of_int addr ^ " + 1), IMM(" ^ string_of_int s_length ^ "))\n" in
-                          let index = ref(-2) in
-                          let suffix =
-                            List.fold_right (fun c prev -> index := !index + 1; "\tMOV(ADDR(MEM_START + " ^ string_of_int addr ^ " + " ^ string_of_int (s_length - !index) ^ "), IMM('" ^ char_to_string c ^ "'))\n" ^ prev)
-                                            (string_to_list_of_chars s)
-                                            ""
-                          in prefix ^ suffix
-                        | Symbol s ->
-                          let print_form_addr = string_of_int (List.nth vals 1) in
-                          "\tMOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), IMM(T_SYMBOL))\n\tMOV(ADDR(MEM_START + " ^ string_of_int addr ^ " + 1), IMM(MEM_START + " ^ print_form_addr ^ "))\n"
-                        | Pair (head, tail) -> "\tMOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), IMM(T_PAIR))\n\tMOV(ADDR(MEM_START + " ^ string_of_int (addr + 1) ^ "), IMM(MEM_START + " ^ string_of_int (List.nth vals 1) ^ "))\n\tMOV(ADDR(MEM_START + " ^ string_of_int (addr + 2) ^ "), IMM(MEM_START + " ^ string_of_int (List.nth vals 2) ^ "))\n"
-                        | Vector entries ->
-                          let vec_length = List.length entries in
-                          let prefix = "\tMOV(ADDR(MEM_START + " ^ string_of_int addr ^ "), IMM(T_VECTOR))\n\tMOV(ADDR(MEM_START + " ^ string_of_int addr ^ " + 1), IMM(" ^ string_of_int vec_length ^ "))\n" in
-                          let index = ref(-2) in
-                          let suffix =
-                            List.fold_right (fun c prev -> index := !index + 1; "\tMOV(ADDR(MEM_START + " ^ string_of_int addr ^ " + " ^ string_of_int (vec_length - !index) ^ "), IMM(MEM_START + " ^ (string_of_int (const_lookup (List.nth entries (vec_length - 2 - !index)) !const_table)) ^ "))\n" ^ prev)
-                                            entries
-                                            ""
-                          in prefix ^ suffix
-                      in
-                      curr ^ prev
-                    )
-                  !const_table
-                  "\n";; *)
 
 let const_table_to_string () =
   "\tlong consts[" ^ string_of_int !const_tab_length ^ "] = {T_VOID" ^
@@ -1799,6 +1708,90 @@ let const_table_to_string () =
                   (List.tl !const_table)
                   "};\n\n";;
 
+let symbol_table_to_string () =
+  let sym_tab_length = List.length !symbol_table in
+  let new_link index =
+    if index = sym_tab_length - 1 then
+      ", T_NIL"
+    else
+      ", SYM_TAB_START + " ^ string_of_int ((1 + index) * 2) in
+  "\tlong symbols[1 + " ^ string_of_int ((List.length !symbol_table) * 2) ^ "] = {0\n " ^
+  (List.fold_right (fun curr prev -> curr ^ prev)
+  (List.mapi (fun index addr -> "\t, MEM_START + " ^ string_of_int addr ^ new_link index ^ "\n")
+          !symbol_table)
+          "") ^
+  "};\n\n"
+
+let make_sym_tab_init_string () =
+  if List.length !symbol_table = 0 then
+    "\n\n"
+  else
+    symbol_table_to_string () ^
+    "PUSH(IMM(" ^ string_of_int ((List.length !symbol_table) * 2) ^ "))
+    CALL(MALLOC) //allocate memory for the symbol linked list
+    DROP(1)
+    //in the following memcpy, the source is symbols + 1, because symbols[0] is just a padding 0
+    memcpy(M(mem) + SYM_TAB_START, symbols + 1, sizeof(long) * " ^ string_of_int ((List.length !symbol_table) * 2) ^ ");\n";;
+
+let make_prologue () =
+"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+/* change to 0 for no debug info to be printed: */
+#define DO_SHOW 1
+#define MEM_START 2
+#define FREE_VAR_TAB_START (MEM_START + " ^ string_of_int !const_tab_length ^ ")
+#define SYM_TAB_START (FREE_VAR_TAB_START + " ^ string_of_int (List.length !free_var_table) ^ ")
+
+#include \"cisc.h\"
+
+int main()
+{
+
+  START_MACHINE
+  JUMP(CONTINUE)
+
+  #include \"char.lib\"
+  #include \"io.lib\"
+  #include \"math.lib\"
+  #include \"scheme.lib\"
+  #include \"string.lib\"
+  #include \"system.lib\"
+  #include \"debug.h\"
+
+EXCPETION_APPLYING_NON_PROCEDURE:
+  printf(\"Exception: trying to apply a non-procedure\\n\");
+  HALT
+
+EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS:
+  printf(\"Ecxeption: applying closure on wrong number of argumens, given: %ld\\n\", FPARG(1));
+  HALT
+
+CONTINUE:
+PUSH(IMM(1 + " ^ string_of_int !const_tab_length ^ "))
+CALL(MALLOC) //allocate memory for constants
+DROP(1)" ^
+const_table_to_string () ^
+"memcpy(M(mem) + MEM_START, consts, sizeof(long) * " ^ string_of_int !const_tab_length ^ ");
+PUSH(IMM(" ^ string_of_int (List.length !free_var_table) ^ "))
+CALL(MALLOC) //allocate memory for all free variables in the program
+DROP(1)\n" ^
+make_sym_tab_init_string ();;
+
+let epilogue =
+  "
+  PUSH(R0)
+  CALL(WRITE_SOB)
+  PUSH(IMM('\\n'))
+  CALL(PUTCHAR)
+  DROP(2)
+  STOP_MACHINE
+
+  return 0;
+}";;
+
 let compile_scheme_file scm_source_file asm_target_file =
   let file_as_string = file_to_string scm_source_file in
   let file_as_expr'_list = List.map Semantics.run_semantics
@@ -1807,15 +1800,12 @@ let compile_scheme_file scm_source_file asm_target_file =
     make_const_table file_as_expr'_list;
     measure_const_tab_length ();
     make_free_var_table file_as_expr'_list;
-    (* measure_free_var_tab_length (); *)
+    make_symbol_table ();
     let code_as_list = List.map code_gen file_as_expr'_list in
     let code = List.fold_right (fun code prev_code -> code ^ prev_code)
                                 code_as_list
                                 "" in
     string_to_file asm_target_file (make_prologue () ^
-                                    "\tPUSH(IMM(1 + " ^ (string_of_int !const_tab_length) ^ "))\n\tCALL(MALLOC)\n\tDROP(1)\n" ^
-                                    const_table_to_string () ^
-                                    "\tmemcpy(M(mem) + MEM_START, consts, sizeof(long) * " ^ string_of_int !const_tab_length ^ ");\n\n" ^
                                     code ^
                                     epilogue)
   end
