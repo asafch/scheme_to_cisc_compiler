@@ -1,6 +1,6 @@
 #;'#('(4 5) (1 2))                          ; vector with quoted list and non-quoted list
 
-'#("B" 3 'cake cookie donut pie)                     ; vector with quoted symbol and non-quoted symbol
+#;'#("B" 3 'cake cookie donut pie)                     ; vector with quoted symbol and non-quoted symbol
 
 #; '(1 2 3 4 4 5 6 7 8 9 10 11 12 13 (14 15 (16)) 17 18 19 20) ;115 constants
 
@@ -46,3 +46,7 @@
 #;(define foo (lambda (x) x))               ; the following 3 lines test for closure creation, binding the closure to its position in the free var table, using it in a later definition and then using that later definition
 #;(define goo (foo 5))
 #;(foo goo)
+
+(foo goo)                                 ; test for access to undefined variable 'goo'
+(define goo (foo 5))
+(define foo (lambda (x) x))

@@ -1340,6 +1340,7 @@ let t_SYMBOL = 368031;;
 let t_PAIR = 885397;;
 let t_VECTOR = 335728;;
 let t_CLOSURE = 276405;;
+let t_UNDEFINED = 544512;;
 
 let file_to_string input_file =
   let in_channel = open_in input_file in
@@ -1438,12 +1439,16 @@ let code_gen e =
     | Var' v ->
       begin
         match v with
-        | VarFree' var -> "\tMOV(R0, INDD(FREE_VAR_TAB_START, " ^ string_of_int (free_var_lookup (Var' v) !free_var_table) ^ "))\n"
+        | VarFree' var ->
+          "\tMOV(R0, INDD(FREE_VAR_TAB_START, " ^ string_of_int (free_var_lookup (Var' v) !free_var_table) ^ "))\n" ^
+          "\tCMP(R0, T_UNDEFINED)\n" ^
+          "\tJUMP_EQ(EXCEPTION_UNDEFINED_VARIABLE)\n"
         | VarParam' (var, minor) -> "MOV(R0, FPARG(" ^ string_of_int minor ^ " + 2))\n"
         | VarBound' (var, major, minor) -> "\tMOV(R0, FPARG(0))\n
                                             \tMOV(R0, INDD(R0, " ^ string_of_int major ^ "))\n
                                             \tMOV(R0, INDD(R0, " ^ string_of_int minor ^ "))\n"
       end
+      (* | Box' var -> "box" *)
     (* | BoxGet' var -> "boxget" *)
     (* | BoxSet' (var, new_val) -> "boxset" *)
     | If' (test, dit, dif) ->
@@ -1461,6 +1466,7 @@ let code_gen e =
       List.fold_right (fun curr prev -> (run curr env_size) ^ "\n" ^ prev)
                       exprs'
                       ""
+    (* | Set' (var, new_val) -> "set!" *)
     | Def' (var, value) ->
       (run value env_size) ^
       "\tMOV(IND(FREE_VAR_TAB_START + " ^ string_of_int (free_var_lookup var !free_var_table) ^ "), R0)\n"
@@ -1673,7 +1679,7 @@ let char_to_string c =
   Char.escaped (Char.chr c);;
 
 let const_table_to_string () =
-  "\tlong consts[" ^ string_of_int !const_tab_length ^ "] = {T_VOID" ^
+  "long consts[" ^ string_of_int !const_tab_length ^ "] = {T_VOID" ^
   List.fold_right (fun (c, addr, vals) prev ->
                       let curr =
                         match c with
@@ -1706,7 +1712,7 @@ let const_table_to_string () =
                       curr ^ prev
                     )
                   (List.tl !const_table)
-                  "};\n\n";;
+                  "};";;
 
 let symbol_table_to_string () =
   let sym_tab_length = List.length !symbol_table in
@@ -1723,15 +1729,27 @@ let symbol_table_to_string () =
   "};\n\n"
 
 let make_sym_tab_init_string () =
-  if List.length !symbol_table = 0 then
-    "\n\n"
-  else
-    symbol_table_to_string () ^
-    "PUSH(IMM(" ^ string_of_int ((List.length !symbol_table) * 2) ^ "))
-    CALL(MALLOC) //allocate memory for the symbol linked list
-    DROP(1)
-    //in the following memcpy, the source is symbols + 1, because symbols[0] is just a padding 0
-    memcpy(M(mem) + SYM_TAB_START, symbols + 1, sizeof(long) * " ^ string_of_int ((List.length !symbol_table) * 2) ^ ");\n";;
+  let prefix =
+    if List.length !symbol_table = 0 then
+      "\n\nMOV(ADDR(1), IMM(MEM_START + 1))\n"
+    else
+      symbol_table_to_string () ^
+      "PUSH(IMM(" ^ string_of_int ((List.length !symbol_table) * 2) ^ "))\n" ^
+      "CALL(MALLOC) //allocate memory for the symbol linked list\n" ^
+      "DROP(1)\n" ^
+      "//in the following memcpy, the source is symbols + 1, because symbols[0] is just a padding 0\n" ^
+      "memcpy(M(mem) + SYM_TAB_START, symbols + 1, sizeof(long) * " ^ string_of_int ((List.length !symbol_table) * 2) ^ ");\n" in
+    prefix ^ "//mem[1] holds the address of the first link in the symbols linked list" ^
+    "MOV(ADDR(1), IMM(FREE_VAR_TAB_START + " ^ string_of_int (List.length !free_var_table) ^ "))\n\n\n";;
+
+let make_free_var_tab_init_string () =
+  "long freevars[" ^ string_of_int ((List.length !free_var_table) + 1) ^ "] = {0\n" ^
+  (List.fold_left (fun prev curr -> prev ^ ", T_UNDEFINED\n")
+                  ""
+                  !free_var_table) ^
+  "};" ^
+  "//memcpy from freevars + 1 because freevars[0]=0 for padding\n" ^
+  "memcpy(M(mem) + FREE_VAR_TAB_START, freevars + 1, sizeof(long) * " ^ string_of_int (List.length !free_var_table) ^ ");\n\n";;
 
 let make_prologue () =
 "
@@ -1766,18 +1784,24 @@ EXCPETION_APPLYING_NON_PROCEDURE:
   HALT
 
 EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS:
-  printf(\"Ecxeption: applying closure on wrong number of argumens, given: %ld\\n\", FPARG(1));
+  printf(\"Exception: applying closure on wrong number of argumens, given: %ld\\n\", FPARG(1));
+  HALT
+
+EXCEPTION_UNDEFINED_VARIABLE:
+  printf(\"Exception: undefined variable\\n\");
   HALT
 
 CONTINUE:
 PUSH(IMM(1 + " ^ string_of_int !const_tab_length ^ "))
 CALL(MALLOC) //allocate memory for constants
-DROP(1)" ^
+DROP(1)\n" ^
 const_table_to_string () ^
-"memcpy(M(mem) + MEM_START, consts, sizeof(long) * " ^ string_of_int !const_tab_length ^ ");
+"\nmemcpy(M(mem) + MEM_START, consts, sizeof(long) * " ^ string_of_int !const_tab_length ^ ");
+
 PUSH(IMM(" ^ string_of_int (List.length !free_var_table) ^ "))
 CALL(MALLOC) //allocate memory for all free variables in the program
 DROP(1)\n" ^
+make_free_var_tab_init_string () ^
 make_sym_tab_init_string ();;
 
 let epilogue =

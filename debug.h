@@ -9,6 +9,7 @@
   : ((x) == T_PAIR)           ? snprintf(res, 16, "%s", "T_PAIR")                     \
   : ((x) == T_VECTOR)         ? snprintf(res, 16, "%s", "T_VECTOR")                   \
   : ((x) == T_CLOSURE)        ? snprintf(res, 16, "%s", "T_CLOSURE")                  \
+  : ((x) == T_UNDEFINED)      ? snprintf(res, 16, "%s", "T_UNDEFINED")                \
   : ((x) == 13371337)         ? snprintf(res, 16, "%s", "** MOVED **")                \
   :                             snprintf(res, 16, "%ld", (x)))
 
@@ -19,13 +20,23 @@
   printf("----------------------------\n");                                         \
   printf("Register Info:\n");                                                       \
   printf("----------------------------\n");                                         \
-  printf("FP = %-10ld SP = %ld\n\n", FP, SP);                                       \
+  printf("FP = %-10ld SP = %ld \nTR = %-10ld\n\n", FP, SP, TR);                                       \
   TRANS(R0, type1); TRANS(R1, type2);                                               \
   printf("R0 = %-10s R1 = %s\n", type1, type2);                                     \
   TRANS(R2, type1); TRANS(R3, type2);                                               \
   printf("R2 = %-10s R3 = %s\n", type1, type2);                                     \
   TRANS(R4, type1); TRANS(R5, type2);                                               \
-  printf("R4 = %-10s R5 = %s\n\n", type1, type2);                                   \
+  printf("R4 = %-10s R5 = %s\n", type1, type2);                                   \
+  TRANS(R6, type1); TRANS(R7, type2);                                               \
+  printf("R6 = %-10s R7 = %s\n", type1, type2);                                   \
+  TRANS(R8, type1); TRANS(R9, type2);                                               \
+  printf("R8 = %-10s R9 = %s\n", type1, type2);                                   \
+  TRANS(R10, type1); TRANS(R11, type2);                                               \
+  printf("R10 = %-10s R11 = %s\n", type1, type2);                                   \
+  TRANS(R12, type1); TRANS(R13, type2);                                               \
+  printf("R12 = %-10s R13 = %s\n", type1, type2);                                   \
+  TRANS(R14, type1); TRANS(R15, type2);                                               \
+  printf("R14 = %-10s R15 = %s\n", type1, type2);                                   \
   printf("----------------------------\n");                                         \
   printf("Stack Info:\n");                                                          \
   printf("----------------------------\n");                                         \

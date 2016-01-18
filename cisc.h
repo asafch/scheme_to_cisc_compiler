@@ -52,6 +52,7 @@ extern Machine *machine;
 #define R15 (M(r15))
 #define SP (M(sp))
 #define FP (M(fp))
+#define TR (M(test_result))
 
 #define IMM(n) (L(n))
 #define IND(r) (M(mem)[(r)])
