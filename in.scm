@@ -47,10 +47,8 @@
 #;(define goo (foo 5))
 #;(foo goo)
 
-((lambda (x y z) x) 1 5 '3)
-((lambda (x y z) y) 1 5 '3)
-((lambda (x y z) z) 1 5 '3)
-
 #;(foo goo)                                 ; test for access to undefined variable 'goo'
 #;(define goo (foo 5))
 #;(define foo (lambda (x) x))
+
+((lambda (x) ((lambda (y) (set! x (+ 1 y))) x)) 1)

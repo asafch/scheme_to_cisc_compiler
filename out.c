@@ -1206,7 +1206,7 @@ L_lambda_simple_end_3:
 	POP(R1)
 	DROP(R1)
 L_lapplic_end_3:
-BP
+
   PUSH(R0)
   CALL(WRITE_SOB)
   PUSH(IMM('\n'))

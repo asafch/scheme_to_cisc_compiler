@@ -1453,9 +1453,43 @@ let code_gen e =
                                             \tMOV(R0, INDD(R0, " ^ string_of_int major ^ "))\n
                                             \tMOV(R0, INDD(R0, " ^ string_of_int minor ^ "))\n"
       end
-      (* | Box' var -> "box" *)
-    (* | BoxGet' var -> "boxget" *)
-    (* | BoxSet' (var, new_val) -> "boxset" *)
+    | Box' v ->
+      begin
+        match v with
+        | VarFree' var -> raise (X_why ("Exception: code_gen: trying to box free var: " ^ var))
+        | VarBound' (var, major, minor) -> raise (X_why ("Exception: code_gen: trying to box bound var: " ^ var))
+        | VarParam' (var, minor) ->
+            "\tPUSH(IMM(1))\n" ^
+            "\tCALL(MALLOC)\n" ^
+            "\tDROP(1)\n" ^
+            "\tMOV(R1, FPARG(2 + " ^ string_of_int minor ^ "))\n" ^
+            "\tMOV(IND(R0), R1)\n" ^
+            "\tMOV(FPARG(2 + " ^ string_of_int minor ^ "), R0)\n"
+      end
+    | BoxGet' v ->
+      begin
+        match v with
+        | VarParam' (var, minor) ->
+            "\tMOV(R0, FPARG(2 + " ^ string_of_int minor ^ "))\n" ^
+            "\tMOV(R0, IND(R0))\n"
+        | VarFree' var -> raise (X_why ("Exception: code_gen: trying to box-get free var: " ^ var))
+        (* TODO wrong!!! *)
+        | VarBound' (var, major, minor) -> raise (X_why ("Exception: code_gen: trying to box-get bound var: " ^ var))
+      end
+    | BoxSet' (v, new_val) ->
+      let new_val = run new_val env_size in
+      begin
+        match v with
+        | VarBound' (var, major, minor) ->
+            new_val ^
+            "\tMOV(R1, FPARG(0))\n" ^
+            "\tMOV(R1, INDD(R1, " ^ string_of_int major ^ "))\n" ^
+            "\tMOV(INDD(R1, " ^ string_of_int minor ^ "), R0)\n" ^
+            "\tMOV(R0, IMM(T_VOID))\n"
+            (* TODO wrong!!! *)
+        | VarParam' (var, minor)  -> raise (X_why ("Exception: code_gen: trying to box-set param var: " ^ var))
+        | VarFree' var -> raise (X_why ("Exception: code_gen: trying to box-set free var: " ^ var))
+      end
     | If' (test, dit, dif) ->
       let (in_label, else_label, end_label) = make_if_else_labels () in
       in_label ^ ":\n" ^

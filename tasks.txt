@@ -1,1 +1,57 @@
-symbol->string : consider deep copy vs. shallow copy. Mayers suggetsts using shallow copy.
+-symbol->string : consider deep copy vs. shallow copy. Mayers suggetsts using shallow copy.
+-append: deep-copy the argument list_to_string
+-if statements compare the test value to T_BOOL instead of 0
+-check that an expression with the value 'void' prints out '\n' and not #<void>
+-print each expression in the expr' list after code-gening it with WRITE_SOB
+-test: set
+-test: box
+-test: box-set
+-test: box-get
+-ApplicTP
+-LambdaOpt
+-library functions
+  append (variadic)
+  apply
+  < (variadic)
+  = (variadic)
+  > (variadic)
+  + (variadic)
+  / (variadic)
+  * (variadic)
+  boolean?
+  car
+  cdr
+  char->integer
+  char?
+  cons
+  denominator
+  eq?
+  integer?
+  integer->char
+  list (variadic)
+  make-string
+  make-vector
+  map
+  not
+  null?
+  number?
+  numerator
+  pair?
+  procedure?
+  rational?
+  remainder
+  set-car!
+  set-cdr!
+  string-length
+  string-ref
+  string-set!
+  string->symbol
+  string?
+  symbol?
+  symbol->string
+  vector
+  vector-length
+  vector-ref
+  vector-set!
+  vector?
+  zero?
