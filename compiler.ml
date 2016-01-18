@@ -1370,7 +1370,12 @@ let const_lookup c lst =
 let free_var_lookup v lst =
   let rec finder lst2 =
     match lst2 with
-    | [] -> raise (X_why "free_var_lookup: free_var not found in free_var_table")
+    | [] ->
+    begin
+      match v with
+      | Var' (VarFree' s) -> raise (X_why ("free_var_lookup: free_var not found in free_var_table: " ^ s))
+      | _ -> raise (X_why "free_var_lookup: somehow, a non-free-var slipped in here")
+    end
     | (var, addr) :: tail -> if v = var then
                                 addr
                               else
@@ -1638,24 +1643,29 @@ let make_const_table lst =
               )
             second_pass;;
 
+let library_functions =
+  [Var' (VarFree' "append"); Var' (VarFree' "apply"); Var' (VarFree' "<"); Var' (VarFree' "="); Var' (VarFree' ">");
+  Var' (VarFree' "+"); Var' (VarFree' "/"); Var' (VarFree' "*"); Var' (VarFree' "-"); Var' (VarFree' "boolean?");
+  Var' (VarFree' "car"); Var' (VarFree' "cdr"); Var' (VarFree' "char->integer"); Var' (VarFree' "char?"); Var' (VarFree' "cons");
+  Var' (VarFree' "denominator"); Var' (VarFree' "eq?"); Var' (VarFree' "integer?"); Var' (VarFree' "integer->char");
+  Var' (VarFree' "list"); Var' (VarFree' "make-string"); Var' (VarFree' "make-vector"); Var' (VarFree' "map"); Var' (VarFree' "not");
+  Var' (VarFree' "null?"); Var' (VarFree' "number?"); Var' (VarFree' "numerator"); Var' (VarFree' "pair?"); Var' (VarFree' "procedure?");
+  Var' (VarFree' "rational?"); Var' (VarFree' "remainder"); Var' (VarFree' "set-car!"); Var' (VarFree' "set-cdr!"); Var' (VarFree' "string-length");
+  Var' (VarFree' "string-ref"); Var' (VarFree' "string-set!"); Var' (VarFree' "string->symbol"); Var' (VarFree' "string?"); Var' (VarFree' "symbol?");
+  Var' (VarFree' "symbol->string"); Var' (VarFree' "vector"); Var' (VarFree' "vector-length"); Var' (VarFree' "vector-ref"); Var' (VarFree' "vector-set!");
+  Var' (VarFree' "vector?"); Var' (VarFree' "zero?")];;
+
 let make_free_var_table lst =
-  let prefix = [Var' (VarFree' "append"); Var' (VarFree' "apply"); Var' (VarFree' "<"); Var' (VarFree' "="); Var' (VarFree' ">");
-                Var' (VarFree' "+"); Var' (VarFree' "/"); Var' (VarFree' "*"); Var' (VarFree' "-"); Var' (VarFree' "boolean?");
-                Var' (VarFree' "car"); Var' (VarFree' "cdr"); Var' (VarFree' "char->integer"); Var' (VarFree' "char?"); Var' (VarFree' "cons");
-                Var' (VarFree' "denominator"); Var' (VarFree' "eq?"); Var' (VarFree' "integer?"); Var' (VarFree' "integer->char");
-                Var' (VarFree' "list"); Var' (VarFree' "make-string"); Var' (VarFree' "make-vector"); Var' (VarFree' "map"); Var' (VarFree' "not");
-                Var' (VarFree' "null?"); Var' (VarFree' "number?"); Var' (VarFree' "numerator"); Var' (VarFree' "pair?"); Var' (VarFree' "procedure?");
-                Var' (VarFree' "rational?"); Var' (VarFree' "remainder"); Var' (VarFree' "set-car!"); Var' (VarFree' "set-cdr!"); Var' (VarFree' "string-length");
-                Var' (VarFree' "string-ref"); Var' (VarFree' "string-set!"); Var' (VarFree' "string->symbol"); Var' (VarFree' "string?"); Var' (VarFree' "symbol?");
-                Var' (VarFree' "symbol->string"); Var' (VarFree' "vector"); Var' (VarFree' "vector-length"); Var' (VarFree' "vector-ref"); Var' (VarFree' "vector-set!");
-                Var' (VarFree' "vector?"); Var' (VarFree' "zero?")] in
   let pass = List.filter (fun e -> match e with
                                     | Def' (var, value) -> true
                                     | _ -> false
                           )
                           lst in
-  let pass = List.map (fun (Def' (var, value)) -> var) pass in
-  let pass = purge_duplicates (prefix @ pass) in
+  let pass = List.map (fun expr' -> match expr' with
+                                    | (Def' (var, value)) -> var
+                                    | _ -> raise (X_why "make_free_var_table: somehow, a non Def' expr' slipped in here"))
+                      pass in
+  let pass = purge_duplicates (library_functions @ pass) in
   List.iteri (fun i e -> free_var_table := !free_var_table @ [(e, i)]) pass;;
 
 let make_symbol_table () =
@@ -1721,25 +1731,25 @@ let symbol_table_to_string () =
       ", T_NIL"
     else
       ", SYM_TAB_START + " ^ string_of_int ((1 + index) * 2) in
-  "\tlong symbols[1 + " ^ string_of_int ((List.length !symbol_table) * 2) ^ "] = {0\n " ^
+  "long symbols[1 + " ^ string_of_int ((List.length !symbol_table) * 2) ^ "] = {0\n " ^
   (List.fold_right (fun curr prev -> curr ^ prev)
   (List.mapi (fun index addr -> "\t, MEM_START + " ^ string_of_int addr ^ new_link index ^ "\n")
           !symbol_table)
           "") ^
-  "};\n\n"
+  "};\n"
 
 let make_sym_tab_init_string () =
-  let prefix =
-    if List.length !symbol_table = 0 then
-      "\n\nMOV(ADDR(1), IMM(MEM_START + 1))\n"
-    else
-      symbol_table_to_string () ^
-      "PUSH(IMM(" ^ string_of_int ((List.length !symbol_table) * 2) ^ "))\n" ^
-      "CALL(MALLOC) //allocate memory for the symbol linked list\n" ^
-      "DROP(1)\n" ^
-      "//in the following memcpy, the source is symbols + 1, because symbols[0] is just a padding 0\n" ^
-      "memcpy(M(mem) + SYM_TAB_START, symbols + 1, sizeof(long) * " ^ string_of_int ((List.length !symbol_table) * 2) ^ ");\n" in
-    prefix ^ "//mem[1] holds the address of the first link in the symbols linked list" ^
+  "//sym_tab initialization\n" ^
+  if List.length !symbol_table = 0 then
+    "\n\nMOV(ADDR(1), IMM(MEM_START + 1))\n\n\n"
+  else
+    symbol_table_to_string () ^
+    "PUSH(IMM(" ^ string_of_int ((List.length !symbol_table) * 2) ^ "))\n" ^
+    "CALL(MALLOC) //allocate memory for the symbol linked list\n" ^
+    "DROP(1)\n" ^
+    "//in the following memcpy, the source is symbols + 1, because symbols[0] is just a padding 0\n" ^
+    "memcpy(M(mem) + SYM_TAB_START, symbols + 1, sizeof(long) * " ^ string_of_int ((List.length !symbol_table) * 2) ^ ");\n" ^
+    "//mem[1] holds the address of the first link in the symbols linked list\n" ^
     "MOV(ADDR(1), IMM(FREE_VAR_TAB_START + " ^ string_of_int (List.length !free_var_table) ^ "))\n\n\n";;
 
 let make_free_var_tab_init_string () =
@@ -1751,7 +1761,69 @@ let make_free_var_tab_init_string () =
   "//memcpy from freevars + 1 because freevars[0]=0 for padding\n" ^
   "memcpy(M(mem) + FREE_VAR_TAB_START, freevars + 1, sizeof(long) * " ^ string_of_int (List.length !free_var_table) ^ ");\n\n";;
 
+let make_library_func_string func_name =
+("\n\n//" ^ func_name ^ "\nPUSH(IMM(3))
+CALL(MALLOC)
+DROP(1)
+MOV(INDD(R0, 0), IMM(T_CLOSURE))
+MOV(INDD(R0, 1), IMM(0))
+MOV(INDD(R0, 2), LABEL(L_" ^ func_name ^ "))
+MOV(IND(FREE_VAR_TAB_START + " ^ string_of_int (free_var_lookup (Var' (VarFree' func_name)) !free_var_table) ^ "), R0)
+JUMP(L_exit_" ^ func_name ^ ")
+L_" ^ func_name ^ ":
+  PUSH(FP)
+  MOV(FP, SP)",
+  "\n\tPOP(FP)
+  RETURN
+L_exit_" ^ func_name ^ ":\n\n\n");;
+
+
 let make_prologue () =
+let (enter_append, exit_append) = make_library_func_string "append" in
+let (enter_apply, exit_apply) = make_library_func_string "apply" in
+let (enter_less, exit_less) = make_library_func_string "<" in
+let (enter_equal, exit_eqaul) = make_library_func_string "=" in
+let (enter_greater, exit_greater) = make_library_func_string ">" in
+let (enter_plus, exit_plus) = make_library_func_string "+" in
+let (enter_div, exit_div) = make_library_func_string "/" in
+let (enter_mul, exit_mul) = make_library_func_string "*" in
+let (enter_minus, exit_minus) = make_library_func_string "-" in
+let (enter_boolean, exit_boolean) = make_library_func_string "boolean?" in
+let (enter_car, exit_car) = make_library_func_string "car" in
+let (enter_cdr, exit_cdr) = make_library_func_string "cdr" in
+let (enter_chartointeger, exit_chartointeger) = make_library_func_string "char->integer" in
+let (enter_char, exit_char) = make_library_func_string "char?" in
+let (enter_cons, exit_cons) = make_library_func_string "cons" in
+let (enter_denominator, exit_denominator) = make_library_func_string "denominator" in
+let (enter_eq, exit_eq) = make_library_func_string "eq?" in
+let (enter_integer, exit_integer) = make_library_func_string "integer?" in
+let (enter_integertochar, exit_integertochar) = make_library_func_string "integer->char" in
+let (enter_list, exit_list) = make_library_func_string "list" in
+let (enter_makestring, exit_makestring) = make_library_func_string "make-string" in
+let (enter_map, exit_map) = make_library_func_string "map" in
+let (enter_not, exit_not) = make_library_func_string "not" in
+let (enter_null, exit_null) = make_library_func_string "null?" in
+let (enter_number, exit_number) = make_library_func_string "number?" in
+let (enter_numerator, exit_numerator) = make_library_func_string "numerator" in
+let (enter_pair, exit_pair) = make_library_func_string "pair?" in
+let (enter_procedure, exit_procedure) = make_library_func_string "procedure?" in
+let (enter_rational, exit_rational) = make_library_func_string "rational?" in
+let (enter_remainder, exit_remainder) = make_library_func_string "remainder" in
+let (enter_setcar, exit_setcar) = make_library_func_string "set-car!" in
+let (enter_setcdr, exit_setcdr) = make_library_func_string "set-cdr!" in
+let (enter_stringlength, exit_stringlength) = make_library_func_string "string-length" in
+let (enter_stringref, exit_stringref) = make_library_func_string "string-ref" in
+let (enter_stringset, exit_stringset) = make_library_func_string "string-set!" in
+let (enter_stringtosymbol, exit_stringtosymbol) = make_library_func_string "string->symbol" in
+let (enter_string, exit_string) = make_library_func_string "string?" in
+let (enter_symbol, exit_symbol) = make_library_func_string "symbol?" in
+let (enter_symboltostring, exit_symboltostring) = make_library_func_string "symbol->string" in
+let (enter_vector, exit_vector) = make_library_func_string "vector?" in
+let (enter_vectorlength, exit_vectorlength) = make_library_func_string "vector-length" in
+let (enter_vectorref, exit_vectorref) = make_library_func_string "vector-ref" in
+let (enter_vectorset, exit_vectorset) = make_library_func_string "vector-set!" in
+let (enter_vector, exit_vector) = make_library_func_string "vector?" in
+let (enter_zero, exit_zero) = make_library_func_string "zero?" in
 "
 #include <stdio.h>
 #include <stdlib.h>
@@ -1802,7 +1874,97 @@ PUSH(IMM(" ^ string_of_int (List.length !free_var_table) ^ "))
 CALL(MALLOC) //allocate memory for all free variables in the program
 DROP(1)\n" ^
 make_free_var_tab_init_string () ^
-make_sym_tab_init_string ();;
+make_sym_tab_init_string () ^
+enter_append ^
+exit_append ^
+enter_apply ^
+exit_apply ^
+enter_less ^
+exit_less ^
+enter_equal ^
+exit_eqaul ^
+enter_greater ^
+exit_greater ^
+enter_plus ^
+exit_plus ^
+enter_div ^
+exit_div ^
+enter_mul ^
+exit_mul ^
+enter_minus ^
+exit_minus ^
+enter_boolean ^
+exit_boolean ^
+enter_car ^
+exit_car ^
+enter_cdr ^
+exit_cdr ^
+enter_chartointeger ^
+exit_chartointeger ^
+enter_char ^
+exit_char ^
+enter_cons ^
+exit_cons ^
+enter_denominator ^
+exit_denominator ^
+enter_eq ^
+exit_eq ^
+enter_integer ^
+exit_integer ^
+enter_integertochar ^
+exit_integertochar ^
+enter_list ^
+exit_list ^
+enter_makestring ^
+exit_makestring ^
+enter_map ^
+exit_map ^
+enter_not ^
+exit_not ^
+enter_null ^
+exit_null ^
+enter_number ^
+exit_number ^
+enter_numerator ^
+exit_numerator ^
+enter_pair ^
+exit_pair ^
+enter_procedure ^
+exit_procedure ^
+enter_rational ^
+exit_rational ^
+enter_remainder ^
+exit_remainder ^
+enter_setcar ^
+exit_setcar ^
+enter_setcdr ^
+exit_setcdr ^
+enter_stringlength ^
+exit_stringlength ^
+enter_stringref ^
+exit_stringref ^
+enter_stringset ^
+exit_stringset ^
+enter_stringtosymbol ^
+exit_stringtosymbol ^
+enter_string ^
+exit_string ^
+enter_symbol ^
+exit_symbol ^
+enter_symboltostring ^
+exit_symboltostring ^
+enter_vector ^
+exit_vector ^
+enter_vectorlength ^
+exit_vectorlength ^
+enter_vectorref ^
+exit_vectorref ^
+enter_vectorset ^
+exit_vectorset ^
+enter_vector ^
+exit_vector ^
+enter_zero ^
+exit_zero;;
 
 let epilogue =
   "
