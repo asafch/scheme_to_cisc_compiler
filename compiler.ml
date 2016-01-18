@@ -1823,6 +1823,7 @@ let (enter_integer, exit_integer) = make_library_func_string "integer?" in
 let (enter_integertochar, exit_integertochar) = make_library_func_string "integer->char" in
 let (enter_list, exit_list) = make_library_func_string "list" in
 let (enter_makestring, exit_makestring) = make_library_func_string "make-string" in
+let (enter_makevector, exit_makevector) = make_library_func_string "make-vector" in
 let (enter_map, exit_map) = make_library_func_string "map" in
 let (enter_not, exit_not) = make_library_func_string "not" in
 let (enter_null, exit_null) = make_library_func_string "null?" in
@@ -1940,6 +1941,8 @@ enter_list ^
 exit_list ^
 enter_makestring ^
 exit_makestring ^
+enter_makevector ^
+exit_makevector ^
 enter_map ^
 exit_map ^
 enter_not ^
