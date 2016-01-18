@@ -1762,20 +1762,43 @@ let make_free_var_tab_init_string () =
   "memcpy(M(mem) + FREE_VAR_TAB_START, freevars + 1, sizeof(long) * " ^ string_of_int (List.length !free_var_table) ^ ");\n\n";;
 
 let make_library_func_string func_name =
+let cropped_func_name =
+  match func_name with
+  | "<" -> "less"
+  | "=" -> "equals"
+  | ">" -> "greater"
+  | "+" -> "plus"
+  | "/" -> "div"
+  | "*" -> "mul"
+  | "-" -> "minus"
+  | "char->integer" -> "chartointeger"
+  | "integer->char" -> "integertochar"
+  | "string->symbol" -> "stringtosymbol"
+  | "symbol->string" -> "symboltostring"
+  | "vector?" -> "isVector"
+  | s ->  let no_bang_or_qmark =
+          if String.contains s '?' || String.contains s '!' then
+            String.sub s 0 ((String.length s) - 1)
+          else
+            s
+          in String.map (fun c -> if c = '-' then '_' else c)
+                        no_bang_or_qmark
+  in
+let addr_as_string = string_of_int (free_var_lookup (Var' (VarFree' func_name)) !free_var_table) in
 ("\n\n//" ^ func_name ^ "\nPUSH(IMM(3))
 CALL(MALLOC)
 DROP(1)
 MOV(INDD(R0, 0), IMM(T_CLOSURE))
 MOV(INDD(R0, 1), IMM(0))
-MOV(INDD(R0, 2), LABEL(L_" ^ func_name ^ "))
-MOV(IND(FREE_VAR_TAB_START + " ^ string_of_int (free_var_lookup (Var' (VarFree' func_name)) !free_var_table) ^ "), R0)
-JUMP(L_exit_" ^ func_name ^ ")
-L_" ^ func_name ^ ":
+MOV(INDD(R0, 2), LABEL(L_" ^ cropped_func_name ^ "))
+MOV(IND(FREE_VAR_TAB_START + " ^ addr_as_string ^ "), R0)
+JUMP(L_exit_" ^ cropped_func_name ^ ")
+L_" ^ cropped_func_name ^ ":
   PUSH(FP)
   MOV(FP, SP)",
   "\n\tPOP(FP)
   RETURN
-L_exit_" ^ func_name ^ ":\n\n\n");;
+L_exit_" ^ cropped_func_name ^ ":\n\n\n");;
 
 
 let make_prologue () =
@@ -1818,11 +1841,11 @@ let (enter_stringtosymbol, exit_stringtosymbol) = make_library_func_string "stri
 let (enter_string, exit_string) = make_library_func_string "string?" in
 let (enter_symbol, exit_symbol) = make_library_func_string "symbol?" in
 let (enter_symboltostring, exit_symboltostring) = make_library_func_string "symbol->string" in
-let (enter_vector, exit_vector) = make_library_func_string "vector?" in
+let (enter_vector, exit_vector) = make_library_func_string "vector" in
 let (enter_vectorlength, exit_vectorlength) = make_library_func_string "vector-length" in
 let (enter_vectorref, exit_vectorref) = make_library_func_string "vector-ref" in
 let (enter_vectorset, exit_vectorset) = make_library_func_string "vector-set!" in
-let (enter_vector, exit_vector) = make_library_func_string "vector?" in
+let (enter_isVector, exit_isVector) = make_library_func_string "vector?" in
 let (enter_zero, exit_zero) = make_library_func_string "zero?" in
 "
 #include <stdio.h>
@@ -1961,10 +1984,11 @@ enter_vectorref ^
 exit_vectorref ^
 enter_vectorset ^
 exit_vectorset ^
-enter_vector ^
-exit_vector ^
+enter_isVector ^
+exit_isVector ^
 enter_zero ^
-exit_zero;;
+exit_zero ^
+"\n\n\n// *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*- PROGRAM ENTRY POINT *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-\n\n\n";;
 
 let epilogue =
   "

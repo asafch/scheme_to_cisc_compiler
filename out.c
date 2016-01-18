@@ -147,6 +147,848 @@ L_append:
 L_exit_append:
 
 
+
+
+//apply
+PUSH(IMM(3))
+CALL(MALLOC)
+DROP(1)
+MOV(INDD(R0, 0), IMM(T_CLOSURE))
+MOV(INDD(R0, 1), IMM(0))
+MOV(INDD(R0, 2), LABEL(L_apply))
+MOV(IND(FREE_VAR_TAB_START + 1), R0)
+JUMP(L_exit_apply)
+L_apply:
+  PUSH(FP)
+  MOV(FP, SP)
+	POP(FP)
+  RETURN
+L_exit_apply:
+
+
+
+
+//<
+PUSH(IMM(3))
+CALL(MALLOC)
+DROP(1)
+MOV(INDD(R0, 0), IMM(T_CLOSURE))
+MOV(INDD(R0, 1), IMM(0))
+MOV(INDD(R0, 2), LABEL(L_less))
+MOV(IND(FREE_VAR_TAB_START + 2), R0)
+JUMP(L_exit_less)
+L_less:
+  PUSH(FP)
+  MOV(FP, SP)
+	POP(FP)
+  RETURN
+L_exit_less:
+
+
+
+
+//=
+PUSH(IMM(3))
+CALL(MALLOC)
+DROP(1)
+MOV(INDD(R0, 0), IMM(T_CLOSURE))
+MOV(INDD(R0, 1), IMM(0))
+MOV(INDD(R0, 2), LABEL(L_equals))
+MOV(IND(FREE_VAR_TAB_START + 3), R0)
+JUMP(L_exit_equals)
+L_equals:
+  PUSH(FP)
+  MOV(FP, SP)
+	POP(FP)
+  RETURN
+L_exit_equals:
+
+
+
+
+//>
+PUSH(IMM(3))
+CALL(MALLOC)
+DROP(1)
+MOV(INDD(R0, 0), IMM(T_CLOSURE))
+MOV(INDD(R0, 1), IMM(0))
+MOV(INDD(R0, 2), LABEL(L_greater))
+MOV(IND(FREE_VAR_TAB_START + 4), R0)
+JUMP(L_exit_greater)
+L_greater:
+  PUSH(FP)
+  MOV(FP, SP)
+	POP(FP)
+  RETURN
+L_exit_greater:
+
+
+
+
+//+
+PUSH(IMM(3))
+CALL(MALLOC)
+DROP(1)
+MOV(INDD(R0, 0), IMM(T_CLOSURE))
+MOV(INDD(R0, 1), IMM(0))
+MOV(INDD(R0, 2), LABEL(L_plus))
+MOV(IND(FREE_VAR_TAB_START + 5), R0)
+JUMP(L_exit_plus)
+L_plus:
+  PUSH(FP)
+  MOV(FP, SP)
+	POP(FP)
+  RETURN
+L_exit_plus:
+
+
+
+
+///
+PUSH(IMM(3))
+CALL(MALLOC)
+DROP(1)
+MOV(INDD(R0, 0), IMM(T_CLOSURE))
+MOV(INDD(R0, 1), IMM(0))
+MOV(INDD(R0, 2), LABEL(L_div))
+MOV(IND(FREE_VAR_TAB_START + 6), R0)
+JUMP(L_exit_div)
+L_div:
+  PUSH(FP)
+  MOV(FP, SP)
+	POP(FP)
+  RETURN
+L_exit_div:
+
+
+
+
+//*
+PUSH(IMM(3))
+CALL(MALLOC)
+DROP(1)
+MOV(INDD(R0, 0), IMM(T_CLOSURE))
+MOV(INDD(R0, 1), IMM(0))
+MOV(INDD(R0, 2), LABEL(L_mul))
+MOV(IND(FREE_VAR_TAB_START + 7), R0)
+JUMP(L_exit_mul)
+L_mul:
+  PUSH(FP)
+  MOV(FP, SP)
+	POP(FP)
+  RETURN
+L_exit_mul:
+
+
+
+
+//-
+PUSH(IMM(3))
+CALL(MALLOC)
+DROP(1)
+MOV(INDD(R0, 0), IMM(T_CLOSURE))
+MOV(INDD(R0, 1), IMM(0))
+MOV(INDD(R0, 2), LABEL(L_minus))
+MOV(IND(FREE_VAR_TAB_START + 8), R0)
+JUMP(L_exit_minus)
+L_minus:
+  PUSH(FP)
+  MOV(FP, SP)
+	POP(FP)
+  RETURN
+L_exit_minus:
+
+
+
+
+//boolean?
+PUSH(IMM(3))
+CALL(MALLOC)
+DROP(1)
+MOV(INDD(R0, 0), IMM(T_CLOSURE))
+MOV(INDD(R0, 1), IMM(0))
+MOV(INDD(R0, 2), LABEL(L_boolean))
+MOV(IND(FREE_VAR_TAB_START + 9), R0)
+JUMP(L_exit_boolean)
+L_boolean:
+  PUSH(FP)
+  MOV(FP, SP)
+	POP(FP)
+  RETURN
+L_exit_boolean:
+
+
+
+
+//car
+PUSH(IMM(3))
+CALL(MALLOC)
+DROP(1)
+MOV(INDD(R0, 0), IMM(T_CLOSURE))
+MOV(INDD(R0, 1), IMM(0))
+MOV(INDD(R0, 2), LABEL(L_car))
+MOV(IND(FREE_VAR_TAB_START + 10), R0)
+JUMP(L_exit_car)
+L_car:
+  PUSH(FP)
+  MOV(FP, SP)
+	POP(FP)
+  RETURN
+L_exit_car:
+
+
+
+
+//cdr
+PUSH(IMM(3))
+CALL(MALLOC)
+DROP(1)
+MOV(INDD(R0, 0), IMM(T_CLOSURE))
+MOV(INDD(R0, 1), IMM(0))
+MOV(INDD(R0, 2), LABEL(L_cdr))
+MOV(IND(FREE_VAR_TAB_START + 11), R0)
+JUMP(L_exit_cdr)
+L_cdr:
+  PUSH(FP)
+  MOV(FP, SP)
+	POP(FP)
+  RETURN
+L_exit_cdr:
+
+
+
+
+//char->integer
+PUSH(IMM(3))
+CALL(MALLOC)
+DROP(1)
+MOV(INDD(R0, 0), IMM(T_CLOSURE))
+MOV(INDD(R0, 1), IMM(0))
+MOV(INDD(R0, 2), LABEL(L_chartointeger))
+MOV(IND(FREE_VAR_TAB_START + 12), R0)
+JUMP(L_exit_chartointeger)
+L_chartointeger:
+  PUSH(FP)
+  MOV(FP, SP)
+	POP(FP)
+  RETURN
+L_exit_chartointeger:
+
+
+
+
+//char?
+PUSH(IMM(3))
+CALL(MALLOC)
+DROP(1)
+MOV(INDD(R0, 0), IMM(T_CLOSURE))
+MOV(INDD(R0, 1), IMM(0))
+MOV(INDD(R0, 2), LABEL(L_char))
+MOV(IND(FREE_VAR_TAB_START + 13), R0)
+JUMP(L_exit_char)
+L_char:
+  PUSH(FP)
+  MOV(FP, SP)
+	POP(FP)
+  RETURN
+L_exit_char:
+
+
+
+
+//cons
+PUSH(IMM(3))
+CALL(MALLOC)
+DROP(1)
+MOV(INDD(R0, 0), IMM(T_CLOSURE))
+MOV(INDD(R0, 1), IMM(0))
+MOV(INDD(R0, 2), LABEL(L_cons))
+MOV(IND(FREE_VAR_TAB_START + 14), R0)
+JUMP(L_exit_cons)
+L_cons:
+  PUSH(FP)
+  MOV(FP, SP)
+	POP(FP)
+  RETURN
+L_exit_cons:
+
+
+
+
+//denominator
+PUSH(IMM(3))
+CALL(MALLOC)
+DROP(1)
+MOV(INDD(R0, 0), IMM(T_CLOSURE))
+MOV(INDD(R0, 1), IMM(0))
+MOV(INDD(R0, 2), LABEL(L_denominator))
+MOV(IND(FREE_VAR_TAB_START + 15), R0)
+JUMP(L_exit_denominator)
+L_denominator:
+  PUSH(FP)
+  MOV(FP, SP)
+	POP(FP)
+  RETURN
+L_exit_denominator:
+
+
+
+
+//eq?
+PUSH(IMM(3))
+CALL(MALLOC)
+DROP(1)
+MOV(INDD(R0, 0), IMM(T_CLOSURE))
+MOV(INDD(R0, 1), IMM(0))
+MOV(INDD(R0, 2), LABEL(L_eq))
+MOV(IND(FREE_VAR_TAB_START + 16), R0)
+JUMP(L_exit_eq)
+L_eq:
+  PUSH(FP)
+  MOV(FP, SP)
+	POP(FP)
+  RETURN
+L_exit_eq:
+
+
+
+
+//integer?
+PUSH(IMM(3))
+CALL(MALLOC)
+DROP(1)
+MOV(INDD(R0, 0), IMM(T_CLOSURE))
+MOV(INDD(R0, 1), IMM(0))
+MOV(INDD(R0, 2), LABEL(L_integer))
+MOV(IND(FREE_VAR_TAB_START + 17), R0)
+JUMP(L_exit_integer)
+L_integer:
+  PUSH(FP)
+  MOV(FP, SP)
+	POP(FP)
+  RETURN
+L_exit_integer:
+
+
+
+
+//integer->char
+PUSH(IMM(3))
+CALL(MALLOC)
+DROP(1)
+MOV(INDD(R0, 0), IMM(T_CLOSURE))
+MOV(INDD(R0, 1), IMM(0))
+MOV(INDD(R0, 2), LABEL(L_integertochar))
+MOV(IND(FREE_VAR_TAB_START + 18), R0)
+JUMP(L_exit_integertochar)
+L_integertochar:
+  PUSH(FP)
+  MOV(FP, SP)
+	POP(FP)
+  RETURN
+L_exit_integertochar:
+
+
+
+
+//list
+PUSH(IMM(3))
+CALL(MALLOC)
+DROP(1)
+MOV(INDD(R0, 0), IMM(T_CLOSURE))
+MOV(INDD(R0, 1), IMM(0))
+MOV(INDD(R0, 2), LABEL(L_list))
+MOV(IND(FREE_VAR_TAB_START + 19), R0)
+JUMP(L_exit_list)
+L_list:
+  PUSH(FP)
+  MOV(FP, SP)
+	POP(FP)
+  RETURN
+L_exit_list:
+
+
+
+
+//make-string
+PUSH(IMM(3))
+CALL(MALLOC)
+DROP(1)
+MOV(INDD(R0, 0), IMM(T_CLOSURE))
+MOV(INDD(R0, 1), IMM(0))
+MOV(INDD(R0, 2), LABEL(L_make_string))
+MOV(IND(FREE_VAR_TAB_START + 20), R0)
+JUMP(L_exit_make_string)
+L_make_string:
+  PUSH(FP)
+  MOV(FP, SP)
+	POP(FP)
+  RETURN
+L_exit_make_string:
+
+
+
+
+//map
+PUSH(IMM(3))
+CALL(MALLOC)
+DROP(1)
+MOV(INDD(R0, 0), IMM(T_CLOSURE))
+MOV(INDD(R0, 1), IMM(0))
+MOV(INDD(R0, 2), LABEL(L_map))
+MOV(IND(FREE_VAR_TAB_START + 22), R0)
+JUMP(L_exit_map)
+L_map:
+  PUSH(FP)
+  MOV(FP, SP)
+	POP(FP)
+  RETURN
+L_exit_map:
+
+
+
+
+//not
+PUSH(IMM(3))
+CALL(MALLOC)
+DROP(1)
+MOV(INDD(R0, 0), IMM(T_CLOSURE))
+MOV(INDD(R0, 1), IMM(0))
+MOV(INDD(R0, 2), LABEL(L_not))
+MOV(IND(FREE_VAR_TAB_START + 23), R0)
+JUMP(L_exit_not)
+L_not:
+  PUSH(FP)
+  MOV(FP, SP)
+	POP(FP)
+  RETURN
+L_exit_not:
+
+
+
+
+//null?
+PUSH(IMM(3))
+CALL(MALLOC)
+DROP(1)
+MOV(INDD(R0, 0), IMM(T_CLOSURE))
+MOV(INDD(R0, 1), IMM(0))
+MOV(INDD(R0, 2), LABEL(L_null))
+MOV(IND(FREE_VAR_TAB_START + 24), R0)
+JUMP(L_exit_null)
+L_null:
+  PUSH(FP)
+  MOV(FP, SP)
+	POP(FP)
+  RETURN
+L_exit_null:
+
+
+
+
+//number?
+PUSH(IMM(3))
+CALL(MALLOC)
+DROP(1)
+MOV(INDD(R0, 0), IMM(T_CLOSURE))
+MOV(INDD(R0, 1), IMM(0))
+MOV(INDD(R0, 2), LABEL(L_number))
+MOV(IND(FREE_VAR_TAB_START + 25), R0)
+JUMP(L_exit_number)
+L_number:
+  PUSH(FP)
+  MOV(FP, SP)
+	POP(FP)
+  RETURN
+L_exit_number:
+
+
+
+
+//numerator
+PUSH(IMM(3))
+CALL(MALLOC)
+DROP(1)
+MOV(INDD(R0, 0), IMM(T_CLOSURE))
+MOV(INDD(R0, 1), IMM(0))
+MOV(INDD(R0, 2), LABEL(L_numerator))
+MOV(IND(FREE_VAR_TAB_START + 26), R0)
+JUMP(L_exit_numerator)
+L_numerator:
+  PUSH(FP)
+  MOV(FP, SP)
+	POP(FP)
+  RETURN
+L_exit_numerator:
+
+
+
+
+//pair?
+PUSH(IMM(3))
+CALL(MALLOC)
+DROP(1)
+MOV(INDD(R0, 0), IMM(T_CLOSURE))
+MOV(INDD(R0, 1), IMM(0))
+MOV(INDD(R0, 2), LABEL(L_pair))
+MOV(IND(FREE_VAR_TAB_START + 27), R0)
+JUMP(L_exit_pair)
+L_pair:
+  PUSH(FP)
+  MOV(FP, SP)
+	POP(FP)
+  RETURN
+L_exit_pair:
+
+
+
+
+//procedure?
+PUSH(IMM(3))
+CALL(MALLOC)
+DROP(1)
+MOV(INDD(R0, 0), IMM(T_CLOSURE))
+MOV(INDD(R0, 1), IMM(0))
+MOV(INDD(R0, 2), LABEL(L_procedure))
+MOV(IND(FREE_VAR_TAB_START + 28), R0)
+JUMP(L_exit_procedure)
+L_procedure:
+  PUSH(FP)
+  MOV(FP, SP)
+	POP(FP)
+  RETURN
+L_exit_procedure:
+
+
+
+
+//rational?
+PUSH(IMM(3))
+CALL(MALLOC)
+DROP(1)
+MOV(INDD(R0, 0), IMM(T_CLOSURE))
+MOV(INDD(R0, 1), IMM(0))
+MOV(INDD(R0, 2), LABEL(L_rational))
+MOV(IND(FREE_VAR_TAB_START + 29), R0)
+JUMP(L_exit_rational)
+L_rational:
+  PUSH(FP)
+  MOV(FP, SP)
+	POP(FP)
+  RETURN
+L_exit_rational:
+
+
+
+
+//remainder
+PUSH(IMM(3))
+CALL(MALLOC)
+DROP(1)
+MOV(INDD(R0, 0), IMM(T_CLOSURE))
+MOV(INDD(R0, 1), IMM(0))
+MOV(INDD(R0, 2), LABEL(L_remainder))
+MOV(IND(FREE_VAR_TAB_START + 30), R0)
+JUMP(L_exit_remainder)
+L_remainder:
+  PUSH(FP)
+  MOV(FP, SP)
+	POP(FP)
+  RETURN
+L_exit_remainder:
+
+
+
+
+//set-car!
+PUSH(IMM(3))
+CALL(MALLOC)
+DROP(1)
+MOV(INDD(R0, 0), IMM(T_CLOSURE))
+MOV(INDD(R0, 1), IMM(0))
+MOV(INDD(R0, 2), LABEL(L_set_car))
+MOV(IND(FREE_VAR_TAB_START + 31), R0)
+JUMP(L_exit_set_car)
+L_set_car:
+  PUSH(FP)
+  MOV(FP, SP)
+	POP(FP)
+  RETURN
+L_exit_set_car:
+
+
+
+
+//set-cdr!
+PUSH(IMM(3))
+CALL(MALLOC)
+DROP(1)
+MOV(INDD(R0, 0), IMM(T_CLOSURE))
+MOV(INDD(R0, 1), IMM(0))
+MOV(INDD(R0, 2), LABEL(L_set_cdr))
+MOV(IND(FREE_VAR_TAB_START + 32), R0)
+JUMP(L_exit_set_cdr)
+L_set_cdr:
+  PUSH(FP)
+  MOV(FP, SP)
+	POP(FP)
+  RETURN
+L_exit_set_cdr:
+
+
+
+
+//string-length
+PUSH(IMM(3))
+CALL(MALLOC)
+DROP(1)
+MOV(INDD(R0, 0), IMM(T_CLOSURE))
+MOV(INDD(R0, 1), IMM(0))
+MOV(INDD(R0, 2), LABEL(L_string_length))
+MOV(IND(FREE_VAR_TAB_START + 33), R0)
+JUMP(L_exit_string_length)
+L_string_length:
+  PUSH(FP)
+  MOV(FP, SP)
+	POP(FP)
+  RETURN
+L_exit_string_length:
+
+
+
+
+//string-ref
+PUSH(IMM(3))
+CALL(MALLOC)
+DROP(1)
+MOV(INDD(R0, 0), IMM(T_CLOSURE))
+MOV(INDD(R0, 1), IMM(0))
+MOV(INDD(R0, 2), LABEL(L_string_ref))
+MOV(IND(FREE_VAR_TAB_START + 34), R0)
+JUMP(L_exit_string_ref)
+L_string_ref:
+  PUSH(FP)
+  MOV(FP, SP)
+	POP(FP)
+  RETURN
+L_exit_string_ref:
+
+
+
+
+//string-set!
+PUSH(IMM(3))
+CALL(MALLOC)
+DROP(1)
+MOV(INDD(R0, 0), IMM(T_CLOSURE))
+MOV(INDD(R0, 1), IMM(0))
+MOV(INDD(R0, 2), LABEL(L_string_set))
+MOV(IND(FREE_VAR_TAB_START + 35), R0)
+JUMP(L_exit_string_set)
+L_string_set:
+  PUSH(FP)
+  MOV(FP, SP)
+	POP(FP)
+  RETURN
+L_exit_string_set:
+
+
+
+
+//string->symbol
+PUSH(IMM(3))
+CALL(MALLOC)
+DROP(1)
+MOV(INDD(R0, 0), IMM(T_CLOSURE))
+MOV(INDD(R0, 1), IMM(0))
+MOV(INDD(R0, 2), LABEL(L_stringtosymbol))
+MOV(IND(FREE_VAR_TAB_START + 36), R0)
+JUMP(L_exit_stringtosymbol)
+L_stringtosymbol:
+  PUSH(FP)
+  MOV(FP, SP)
+	POP(FP)
+  RETURN
+L_exit_stringtosymbol:
+
+
+
+
+//string?
+PUSH(IMM(3))
+CALL(MALLOC)
+DROP(1)
+MOV(INDD(R0, 0), IMM(T_CLOSURE))
+MOV(INDD(R0, 1), IMM(0))
+MOV(INDD(R0, 2), LABEL(L_string))
+MOV(IND(FREE_VAR_TAB_START + 37), R0)
+JUMP(L_exit_string)
+L_string:
+  PUSH(FP)
+  MOV(FP, SP)
+	POP(FP)
+  RETURN
+L_exit_string:
+
+
+
+
+//symbol?
+PUSH(IMM(3))
+CALL(MALLOC)
+DROP(1)
+MOV(INDD(R0, 0), IMM(T_CLOSURE))
+MOV(INDD(R0, 1), IMM(0))
+MOV(INDD(R0, 2), LABEL(L_symbol))
+MOV(IND(FREE_VAR_TAB_START + 38), R0)
+JUMP(L_exit_symbol)
+L_symbol:
+  PUSH(FP)
+  MOV(FP, SP)
+	POP(FP)
+  RETURN
+L_exit_symbol:
+
+
+
+
+//symbol->string
+PUSH(IMM(3))
+CALL(MALLOC)
+DROP(1)
+MOV(INDD(R0, 0), IMM(T_CLOSURE))
+MOV(INDD(R0, 1), IMM(0))
+MOV(INDD(R0, 2), LABEL(L_symboltostring))
+MOV(IND(FREE_VAR_TAB_START + 39), R0)
+JUMP(L_exit_symboltostring)
+L_symboltostring:
+  PUSH(FP)
+  MOV(FP, SP)
+	POP(FP)
+  RETURN
+L_exit_symboltostring:
+
+
+
+
+//vector
+PUSH(IMM(3))
+CALL(MALLOC)
+DROP(1)
+MOV(INDD(R0, 0), IMM(T_CLOSURE))
+MOV(INDD(R0, 1), IMM(0))
+MOV(INDD(R0, 2), LABEL(L_vector))
+MOV(IND(FREE_VAR_TAB_START + 40), R0)
+JUMP(L_exit_vector)
+L_vector:
+  PUSH(FP)
+  MOV(FP, SP)
+	POP(FP)
+  RETURN
+L_exit_vector:
+
+
+
+
+//vector-length
+PUSH(IMM(3))
+CALL(MALLOC)
+DROP(1)
+MOV(INDD(R0, 0), IMM(T_CLOSURE))
+MOV(INDD(R0, 1), IMM(0))
+MOV(INDD(R0, 2), LABEL(L_vector_length))
+MOV(IND(FREE_VAR_TAB_START + 41), R0)
+JUMP(L_exit_vector_length)
+L_vector_length:
+  PUSH(FP)
+  MOV(FP, SP)
+	POP(FP)
+  RETURN
+L_exit_vector_length:
+
+
+
+
+//vector-ref
+PUSH(IMM(3))
+CALL(MALLOC)
+DROP(1)
+MOV(INDD(R0, 0), IMM(T_CLOSURE))
+MOV(INDD(R0, 1), IMM(0))
+MOV(INDD(R0, 2), LABEL(L_vector_ref))
+MOV(IND(FREE_VAR_TAB_START + 42), R0)
+JUMP(L_exit_vector_ref)
+L_vector_ref:
+  PUSH(FP)
+  MOV(FP, SP)
+	POP(FP)
+  RETURN
+L_exit_vector_ref:
+
+
+
+
+//vector-set!
+PUSH(IMM(3))
+CALL(MALLOC)
+DROP(1)
+MOV(INDD(R0, 0), IMM(T_CLOSURE))
+MOV(INDD(R0, 1), IMM(0))
+MOV(INDD(R0, 2), LABEL(L_vector_set))
+MOV(IND(FREE_VAR_TAB_START + 43), R0)
+JUMP(L_exit_vector_set)
+L_vector_set:
+  PUSH(FP)
+  MOV(FP, SP)
+	POP(FP)
+  RETURN
+L_exit_vector_set:
+
+
+
+
+//vector?
+PUSH(IMM(3))
+CALL(MALLOC)
+DROP(1)
+MOV(INDD(R0, 0), IMM(T_CLOSURE))
+MOV(INDD(R0, 1), IMM(0))
+MOV(INDD(R0, 2), LABEL(L_isVector))
+MOV(IND(FREE_VAR_TAB_START + 44), R0)
+JUMP(L_exit_isVector)
+L_isVector:
+  PUSH(FP)
+  MOV(FP, SP)
+	POP(FP)
+  RETURN
+L_exit_isVector:
+
+
+
+
+//zero?
+PUSH(IMM(3))
+CALL(MALLOC)
+DROP(1)
+MOV(INDD(R0, 0), IMM(T_CLOSURE))
+MOV(INDD(R0, 1), IMM(0))
+MOV(INDD(R0, 2), LABEL(L_zero))
+MOV(IND(FREE_VAR_TAB_START + 45), R0)
+JUMP(L_exit_zero)
+L_zero:
+  PUSH(FP)
+  MOV(FP, SP)
+	POP(FP)
+  RETURN
+L_exit_zero:
+
+
+
+
+
+// *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*- PROGRAM ENTRY POINT *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+
+
 	MOV(R0, IMM(MEM_START + 60))
 L_simple_env_expansion_1:
 	PUSH(IMM(1))
