@@ -6,7 +6,7 @@
 /* change to 0 for no debug info to be printed: */
 #define DO_SHOW 1
 #define MEM_START 2
-#define FREE_VAR_TAB_START (MEM_START + 14)
+#define FREE_VAR_TAB_START (MEM_START + 24)
 #define SYM_TAB_START (FREE_VAR_TAB_START + 46)
 
 #include "cisc.h"
@@ -38,18 +38,23 @@ EXCEPTION_UNDEFINED_VARIABLE:
   HALT
 
 CONTINUE:
-PUSH(IMM(1 + 14))
+PUSH(IMM(1 + 24))
 CALL(MALLOC) //allocate memory for constants
 DROP(1)
-long consts[14] = {T_VOID, T_NIL
+long consts[24] = {T_VOID, T_NIL
 , T_BOOL, 0
 , T_BOOL, 1
 , T_INTEGER, 1
 , T_INTEGER, 2
 , T_INTEGER, 3
 , T_INTEGER, 4
+, T_INTEGER, 6
+, T_INTEGER, 7
+, T_INTEGER, 8
+, T_INTEGER, 9
+, T_INTEGER, 10
 };
-memcpy(M(mem) + MEM_START, consts, sizeof(long) * 14);
+memcpy(M(mem) + MEM_START, consts, sizeof(long) * 24);
 
 PUSH(IMM(46))
 CALL(MALLOC) //allocate memory for all free variables in the program
@@ -991,13 +996,25 @@ L_exit_zero:
 
 
 L_applic_1:
+	MOV(R0, IMM(MEM_START + 22))
+	PUSH(R0)
+	MOV(R0, IMM(MEM_START + 20))
+	PUSH(R0)
+	MOV(R0, IMM(MEM_START + 18))
+	PUSH(R0)
+	MOV(R0, IMM(MEM_START + 16))
+	PUSH(R0)
+	MOV(R0, IMM(MEM_START + 14))
+	PUSH(R0)
 	MOV(R0, IMM(MEM_START + 12))
 	PUSH(R0)
 	MOV(R0, IMM(MEM_START + 10))
 	PUSH(R0)
 	MOV(R0, IMM(MEM_START + 8))
 	PUSH(R0)
-	PUSH(IMM(3))
+	MOV(R0, IMM(MEM_START + 6))
+	PUSH(R0)
+	PUSH(IMM(9))
 L_opt_env_expansion_1:
 	PUSH(IMM(1))
 	CALL(MALLOC)
@@ -1036,11 +1053,11 @@ L_opt_param_copy_end_1:
 	DROP(1)
 	MOV(INDD(R0, 0), IMM(T_CLOSURE))
 	MOV(INDD(R0, 1), R1)
-	MOV(INDD(R0, 2), LABEL(L_opt_simple_1))
-	JUMP(L_opt_simple_end_1)
-L_opt_simple_1:
-	MOV(R0, FPARG(0))
-	CMP(R0, IMM(0))
+	MOV(INDD(R0, 2), LABEL(L_lambda_opt_1))
+	JUMP(L_lambda_opt_end_1)
+L_lambda_opt_1:
+	MOV(R10, STARG(1))
+	CMP(R10, IMM(1))
 	JUMP_GT(L_opt_after_push_nil_1)
 	JUMP_LT(EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS)
 	MOV(R1, SP)
@@ -1073,14 +1090,51 @@ L_opt_push_nil_1:
 L_opt_push_nil_end_1:
 	MOV(STACK(R1), IMM(MEM_START + 1))
 	INCR(SP)
-  BP
 L_opt_after_push_nil_1:
+	MOV(R1, IMM(MEM_START + 1))
+	MOV(R2, STARG(1))
+L_opt_pack_args_1:
+	CMP(R2, IMM(1))
+	JUMP_EQ(L_opt_after_pack_args_1)
+	PUSH(IMM(3))
+	CALL(MALLOC)
+	DROP(1)
+	MOV(INDD(R0, 0), IMM(T_PAIR))
+	MOV(R3, R2)
+	INCR(R3)
+	MOV(INDD(R0, 1), STARG(R3))
+	MOV(INDD(R0, 2), R1)
+	MOV(R1, R0)
+	DECR(R2)
+	JUMP(L_opt_pack_args_1)
+L_opt_after_pack_args_1:
+	MOV(STARG(R3), R1)
+	MOV(R4, STARG(1))
+	MOV(R5, STARG(1))
+	MOV(STARG(1), IMM (2))
+	INCR(R4)
+	DECR(R5)
+	SUB(R5, IMM(1))
+	MOV(R7, IMM(1))
+	ADD(R7, IMM(4))
+	MOV(R6, IMM(0))
+L_lambda_opt_drop_frame_1:
+	CMP(R6, R7)
+	JUMP_EQ(L_lambda_opt_drop_frame_end_1)
+	MOV(R8, STARG(R3))
+	MOV(STARG(R4), R8)
+	INCR(R6)
+	DECR(R4)
+	DECR(R3)
+	JUMP(L_lambda_opt_drop_frame_1)
+L_lambda_opt_drop_frame_end_1:
+	DROP(R5)
 	PUSH(FP)
 	MOV(FP, SP)
-		MOV(R0, IMM(MEM_START + 6))
+MOV(R0, FPARG(1 + 2))
 	POP(FP)
 	RETURN
-L_opt_simple_end_1:
+L_lambda_opt_end_1:
 	CMP(IND(R0), IMM(T_CLOSURE))
 	JUMP_NE(EXCPETION_APPLYING_NON_PROCEDURE)
 	PUSH(INDD(R0, 1))

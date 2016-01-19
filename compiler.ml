@@ -1420,12 +1420,16 @@ let make_lambda_opt_labels =
   let make_push_nil = make_make_label "L_opt_push_nil" in
   let make_push_nil_end = make_make_label "L_opt_push_nil_end" in
   let make_after_push_nil = make_make_label "L_opt_after_push_nil" in
+  let make_pack_args = make_make_label "L_opt_pack_args" in
+  let make_pack_args_end = make_make_label "L_opt_after_pack_args" in
   let make_param_copy = make_make_label "L_opt_param_copy" in
   let make_param_end = make_make_label "L_opt_param_copy_end" in
-  let make_entrance = make_make_label "L_opt_simple" in
-  let make_exit = make_make_label "L_opt_simple_end" in
+  let make_entrance = make_make_label "L_lambda_opt" in
+  let make_exit = make_make_label "L_lambda_opt_end" in
+  let make_drop_frame = make_make_label "L_lambda_opt_drop_frame" in
+  let make_drop_frame_end = make_make_label "L_lambda_opt_drop_frame_end" in
   fun () ->
-  (make_start_expansion(), make_env_expand(), make_env_end(), make_push_nil(), make_push_nil_end(), make_after_push_nil(), make_param_copy(), make_param_end(), make_entrance(), make_exit());;
+  (make_start_expansion(), make_env_expand(), make_env_end(), make_push_nil(), make_push_nil_end(), make_after_push_nil(), make_pack_args(), make_pack_args_end(), make_param_copy(), make_param_end(), make_entrance(), make_exit(), make_drop_frame(), make_drop_frame_end());;
 
 let make_application_labels =
   let make_entrance = make_make_label "L_applic" in
@@ -1597,13 +1601,13 @@ let code_gen e =
         "\tMOV(R15, FPARG(1))\n" ^
         "\tCMP(R15, IMM(" ^ string_of_int (List.length params) ^ "))\n" ^
         "\tJUMP_NE(EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS)\n" ^
-        "\t" ^ (run body (env_size + 1))^                 (* execute the function's nody *)
+        (run body (env_size + 1)) ^                 (* execute the function's nody *)
         "\tPOP(FP)\n" ^                                   (* restore old FP *)
         "\tRETURN\n" ^                                    (* body's value is in R0, return to the calling stack frame *)
         exit ^ ":\n"
         in text
     | LambdaOpt' (params, optional, body) ->
-      let (start_expansion, env_expand, env_end, push_nil, push_nil_end, after_push_nil, param_copy, param_end, entrance, exit) = make_lambda_opt_labels () in
+      let (start_expansion, env_expand, env_end, push_nil, push_nil_end, after_push_nil, pack_args, after_pack_args, param_copy, param_end, entrance, exit, drop_frame, drop_frame_end) = make_lambda_opt_labels () in
       let text =
         start_expansion ^ ":\n" ^
         "\tPUSH(IMM(" ^ string_of_int (env_size + 1) ^ "))\n" ^   (* R1 = |env| + 1*)
@@ -1646,8 +1650,8 @@ let code_gen e =
         "\tMOV(INDD(R0, 2), LABEL(" ^ entrance ^ "))\n" ^ (* attach the body of the function to the closure *)
         "\tJUMP(" ^ exit ^ ")\n" ^                        (* closure is built and its address is returned in R0 *)
         entrance ^ ":\n" ^                                (* when the closure is applied, body execution starts here *)
-        "\tMOV(R0, FPARG(0))\n" ^                     (* FP hasn't been pushed to the stack yet, so n is at FPARG(0) instead of FPARG(1) *)
-        "\tCMP(R0, IMM(" ^ string_of_int (List.length params) ^ "))\n" ^
+        "\tMOV(R10, STARG(1))\n" ^                     (* FP hasn't been pushed to the stack yet, so n is at FPARG(0) instead of FPARG(1) *)
+        "\tCMP(R10, IMM(" ^ string_of_int (List.length params) ^ "))\n" ^
         "\tJUMP_GT(" ^ after_push_nil ^ ")\n" ^
         "\tJUMP_LT(EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS)\n" ^
         (* if no optional arguments were pushed during application, push a Nil on the stack by force and correct the number of supplied arguments *)
@@ -1679,12 +1683,51 @@ let code_gen e =
         "\tINCR(R5)\n" ^
         "\tJUMP(" ^ push_nil ^ ")\n" ^
         push_nil_end ^ ":\n" ^
-        "\tMOV(STACK(R1), IMM(MEM_START + 1))\n" ^
+        "\tMOV(STACK(R1), IMM(MEM_START + 1))\n" ^        (* insert Nil's address to the stack *)
         "\tINCR(SP)\n" ^
         after_push_nil ^ ":\n" ^
+        (* pack all optional arguments to a list, and fix the stack structure *)
+        "\tMOV(R1, IMM(MEM_START + 1))\n" ^         (* R1 = address of Nil *)
+        "\tMOV(R2, STARG(1))\n" ^                     (* R2 = n+d *)
+        pack_args ^ ":\n" ^
+        "\tCMP(R2, IMM(" ^ string_of_int (List.length params) ^ "))\n" ^
+        "\tJUMP_EQ(" ^ after_pack_args ^ ")\n" ^
+        "\tPUSH(IMM(3))\n" ^
+        "\tCALL(MALLOC)\n" ^
+        "\tDROP(1)\n" ^
+        "\tMOV(INDD(R0, 0), IMM(T_PAIR))\n" ^         (* new pair *)
+        "\tMOV(R3, R2)\n" ^
+        "\tINCR(R3)\n" ^
+        "\tMOV(INDD(R0, 1), STARG(R3))\n" ^           (* car = param_i *)
+        "\tMOV(INDD(R0, 2), R1)\n" ^                  (* cdr = the previous packing *)
+        "\tMOV(R1, R0)\n" ^
+        "\tDECR(R2)\n" ^                            (* i-- *)
+        "\tJUMP(" ^ pack_args ^ ")\n" ^
+        after_pack_args ^ ":\n" ^
+        "\tMOV(STARG(R3), R1)\n" ^                  (* after all the mandatory arguments, insert the list of optional arguments *) (* R3 is the position under SP-2 of the first argument after the mandatory arguments *)
+        "\tMOV(R4, STARG(1))\n" ^                   (* R4 = n+d *)
+        "\tMOV(R5, STARG(1))\n" ^
+        "\tMOV(STARG(1), IMM (" ^ string_of_int (1 + List.length params) ^ "))\n" ^   (* update number of params from n+d to d+1, since all optional were wrapped in a list *)
+        "\tINCR(R4)\n" ^                             (* R4 is the position under SP-2 of the last optional argument *)
+        "\tDECR(R5)\n" ^
+        "\tSUB(R5, IMM(" ^ string_of_int (List.length params) ^ "))\n" ^    (* R5 is the number of cells to drop the stack pointer after copying the frame downwards *)
+        "\tMOV(R7, IMM(" ^ string_of_int (List.length params) ^ "))\n" ^
+        "\tADD(R7, IMM(4))\n" ^                      (* R7 is the number of times the frame-dropping-loop will iterate *)
+        "\tMOV(R6, IMM(0))\n" ^                 (* R6 = i = 0 *)
+        drop_frame ^ ":\n" ^
+        "\tCMP(R6, R7)\n" ^
+        "\tJUMP_EQ(" ^ drop_frame_end ^ ")\n" ^
+        "\tMOV(R8, STARG(R3))\n" ^
+        "\tMOV(STARG(R4), R8)\n" ^
+        "\tINCR(R6)\n" ^
+        "\tDECR(R4)\n" ^
+        "\tDECR(R3)\n" ^
+        "\tJUMP(" ^ drop_frame ^ ")\n" ^
+        drop_frame_end ^ ":\n" ^
+        "\tDROP(R5)\n" ^                                (* set SP to correct position after dropping the frame *)
         "\tPUSH(FP)\n" ^                                  (* save old FP *)
         "\tMOV(FP, SP)\n" ^                               (* set new FP *)
-        "\t" ^ (run body (env_size + 1))^                 (* execute the function's nody *)
+        (run body (env_size + 1)) ^                 (* execute the function's nody *)
         "\tPOP(FP)\n" ^                                   (* restore old FP *)
         "\tRETURN\n" ^                                    (* body's value is in R0, return to the calling stack frame *)
         exit ^ ":\n"

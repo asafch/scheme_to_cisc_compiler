@@ -51,8 +51,10 @@
 #;(define goo (foo 5))
 #;(define foo (lambda (x) x))
 
-#;((lambda s 1))                            ; variadic without arguments - check that Nil is pushed by hand to the stack
+#;((lambda s 1))                            ; variadic without arguments - check that Nil is pushed by hand to the stack, and then wrapped in a list: (Nil, Nil)
 
-((lambda s 1) 2 3 4)
+((lambda (a . d) d) 1 2 3 4 6 7 8 9 10)      ; packing the optional arguments to a list - should return (4 . (6 . (7 . (8 . ()))))
+
+#;((lambda s 1) 2 3 4)
 
 #;((lambda (x) (set! x 5)) 1)               ; set! expressions return void - should print a newline in the prompt
