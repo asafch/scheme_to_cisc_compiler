@@ -1511,7 +1511,20 @@ let code_gen e =
       List.fold_right (fun curr prev -> (run curr env_size) ^ "\n" ^ prev)
                       exprs'
                       ""
-    (* | Set' (var, new_val) -> "set!" *)
+    | Set' (Var' v, new_val) ->
+      let new_val = run new_val env_size in
+      begin
+        match v with
+        | VarParam' (var, minor) ->
+          "\tMOV(FPARG(2 + " ^ string_of_int minor ^ "), R0)\n" ^
+          "\tMOV(R0, IMM(MEM_START))  // void\n"
+        | VarBound' (var, major, minor) ->
+          "\tMOV(R1, FPARG(0))\n" ^
+          "\tMOV(R1, INDD(R1, " ^ string_of_int major ^ "))\n" ^
+          "\tMOV(INDD(R1, " ^ string_of_int minor ^ "), R0)\n" ^
+          "\tMOV(R0, IMM(MEM_START))  // void\n"
+        | VarFree' var -> raise (X_why ("Exception: code_gen: trying to set free var: " ^ var))
+      end
     | Def' (var, value) ->
       (run value env_size) ^
       "\tMOV(IND(FREE_VAR_TAB_START + " ^ string_of_int (free_var_lookup var !free_var_table) ^ "), R0)\n" ^
