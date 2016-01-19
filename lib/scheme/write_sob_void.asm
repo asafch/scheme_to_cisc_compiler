@@ -22,7 +22,4 @@
   // PUSH(IMM('>'));
   // CALL(PUTCHAR);
   // DROP(7);
-  PUSH(IMM('\n'))
-  CALL(PUTCHAR)
-  DROP(1)
   RETURN;

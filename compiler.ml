@@ -1464,7 +1464,8 @@ let code_gen e =
             "\tDROP(1)\n" ^
             "\tMOV(R1, FPARG(2 + " ^ string_of_int minor ^ "))\n" ^
             "\tMOV(IND(R0), R1)\n" ^
-            "\tMOV(FPARG(2 + " ^ string_of_int minor ^ "), R0)\n"
+            "\tMOV(FPARG(2 + " ^ string_of_int minor ^ "), R0)\n" ^
+            "\tMOV(R0, IMM(MEM_START))  // void\n"
       end
     | BoxGet' v ->
       begin
@@ -1473,8 +1474,11 @@ let code_gen e =
             "\tMOV(R0, FPARG(2 + " ^ string_of_int minor ^ "))\n" ^
             "\tMOV(R0, IND(R0))\n"
         | VarFree' var -> raise (X_why ("Exception: code_gen: trying to box-get free var: " ^ var))
-        (* TODO wrong!!! *)
-        | VarBound' (var, major, minor) -> raise (X_why ("Exception: code_gen: trying to box-get bound var: " ^ var))
+        | VarBound' (var, major, minor) ->
+            "\tMOV(R0, FPARG(0))\n" ^
+            "\tMOV(R0, INDD(R0, " ^ string_of_int major ^ "))\n" ^
+            "\tMOV(R0, INDD(R0, " ^ string_of_int minor ^ "))\n" ^
+            "\tMOV(R0, IND(R0))\n"
       end
     | BoxSet' (v, new_val) ->
       let new_val = run new_val env_size in
@@ -1485,9 +1489,11 @@ let code_gen e =
             "\tMOV(R1, FPARG(0))\n" ^
             "\tMOV(R1, INDD(R1, " ^ string_of_int major ^ "))\n" ^
             "\tMOV(INDD(R1, " ^ string_of_int minor ^ "), R0)\n" ^
-            "\tMOV(R0, IMM(T_VOID))\n"
-            (* TODO wrong!!! *)
-        | VarParam' (var, minor)  -> raise (X_why ("Exception: code_gen: trying to box-set param var: " ^ var))
+            "\tMOV(R0, IMM(MEM_START))  // void\n"
+        | VarParam' (var, minor)  ->
+            new_val ^
+            "\tMOV(FPARG(2 + " ^ string_of_int minor ^ "), R0)\n" ^
+            "\tMOV(R0, IMM(MEM_START))  // void\n"
         | VarFree' var -> raise (X_why ("Exception: code_gen: trying to box-set free var: " ^ var))
       end
     | If' (test, dit, dif) ->
@@ -1508,7 +1514,8 @@ let code_gen e =
     (* | Set' (var, new_val) -> "set!" *)
     | Def' (var, value) ->
       (run value env_size) ^
-      "\tMOV(IND(FREE_VAR_TAB_START + " ^ string_of_int (free_var_lookup var !free_var_table) ^ "), R0)\n"
+      "\tMOV(IND(FREE_VAR_TAB_START + " ^ string_of_int (free_var_lookup var !free_var_table) ^ "), R0)\n" ^
+      "\tMOV(R0, IMM(MEM_START))\n"
     | Or' exprs' ->
       let (entrance, exit) = make_or_labels () in
       entrance ^ ":\n" ^
@@ -2027,13 +2034,16 @@ enter_zero ^
 exit_zero ^
 "\n\n\n// *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*- PROGRAM ENTRY POINT *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-\n\n\n";;
 
-let epilogue =
+let printer =
   "
   PUSH(R0)
   CALL(WRITE_SOB)
   PUSH(IMM('\\n'))
   CALL(PUTCHAR)
-  DROP(2)
+  DROP(2)";;
+
+let epilogue =
+  "
   STOP_MACHINE
 
   return 0;
@@ -2049,7 +2059,7 @@ let compile_scheme_file scm_source_file asm_target_file =
     make_free_var_table file_as_expr'_list;
     make_symbol_table ();
     let code_as_list = List.map code_gen file_as_expr'_list in
-    let code = List.fold_right (fun code prev_code -> code ^ prev_code)
+    let code = List.fold_right (fun code prev_code -> code ^ printer ^ prev_code)
                                 code_as_list
                                 "" in
     string_to_file asm_target_file (make_prologue () ^

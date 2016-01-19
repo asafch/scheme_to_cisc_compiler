@@ -43,12 +43,12 @@
 
 #;((lambda (x) ((lambda (y) ((lambda (z) z) y)) x)) 2)         ; tail position application - check the the env expansion works properly
 
-#;(define foo (lambda (x) x))               ; the following 3 lines test for closure creation, binding the closure to its position in the free var table, using it in a later definition and then using that later definition
-#;(define goo (foo 5))
-#;(foo goo)
+(define foo (lambda (x) x))               ; the following 3 lines test for closure creation, binding the closure to its position in the free var table, using it in a later definition and then using that later definition
+(define goo (foo 5))
+(foo goo)
 
 #;(foo goo)                                 ; test for access to undefined variable 'goo'
 #;(define goo (foo 5))
 #;(define foo (lambda (x) x))
 
-((lambda (x) ((lambda (y) (set! x (+ 1 y))) x)) 1)
+#;((lambda (x) ((lambda (y) (set! x (+ 1 y))) x)) 1)
