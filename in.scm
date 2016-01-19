@@ -1,6 +1,6 @@
 #;'#('(4 5) (1 2))                          ; vector with quoted list and non-quoted list
 
-'#("B" 3 'cake cookie donut pie)                     ; vector with quoted symbol and non-quoted symbol
+#;'#("B" 3 'cake cookie donut pie)                     ; vector with quoted symbol and non-quoted symbol
 
 #; '(1 2 3 4 4 5 6 7 8 9 10 11 12 13 (14 15 (16)) 17 18 19 20) ;115 constants
 
@@ -18,7 +18,7 @@
 
 #;(if #t 1 2)                               ; if with 'else' clause
 
-#;(if #f 3)                                 ; if without else clause, test evaluates to #f, should return #<void> as per write_sob_void.asm
+#;(if #f 3)                                 ; if without else clause, test evaluates to #f, should return void
 
 #;`(1 2 'k)                                 ; quasiquote
 
@@ -43,12 +43,16 @@
 
 #;((lambda (x) ((lambda (y) ((lambda (z) z) y)) x)) 2)         ; tail position application - check the the env expansion works properly
 
-(define foo (lambda (x) x))               ; the following 3 lines test for closure creation, binding the closure to its position in the free var table, using it in a later definition and then using that later definition
-(define goo (foo 5))
-(foo goo)
+#;(define foo (lambda (x) x))               ; the following 3 lines test for closure creation, binding the closure to its position in the free var table, using it in a later definition and then using that later definition
+#;(define goo (foo 5))
+#;(foo goo)
 
 #;(foo goo)                                 ; test for access to undefined variable 'goo'
 #;(define goo (foo 5))
 #;(define foo (lambda (x) x))
 
-#;((lambda (x) ((lambda (y) (set! x (+ 1 y))) x)) 1)
+#;((lambda s 1))                            ; variadic without arguments - check that Nil is pushed by hand to the stack
+
+((lambda s 1) 2 3 4)
+
+#;((lambda (x) (set! x 5)) 1)               ; set! expressions return void - should print a newline in the prompt

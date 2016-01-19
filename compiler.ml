@@ -1414,10 +1414,18 @@ let make_lambda_simple_labels =
   (make_start_expansion(), make_env_expand(), make_env_end(), make_param_copy(), make_param_end(), make_entrance(), make_exit());;
 
 let make_lambda_opt_labels =
-  let make_entrance = make_make_label "L_lambda_opt" in
-  let make_exit = make_make_label "L_lambda_opt_end" in
+  let make_start_expansion = make_make_label "L_opt_env_expansion" in
+  let make_env_expand = make_make_label "L_opt_env_expand" in
+  let make_env_end = make_make_label "L_opt_env_expand_end" in
+  let make_push_nil = make_make_label "L_opt_push_nil" in
+  let make_push_nil_end = make_make_label "L_opt_push_nil_end" in
+  let make_after_push_nil = make_make_label "L_opt_after_push_nil" in
+  let make_param_copy = make_make_label "L_opt_param_copy" in
+  let make_param_end = make_make_label "L_opt_param_copy_end" in
+  let make_entrance = make_make_label "L_opt_simple" in
+  let make_exit = make_make_label "L_opt_simple_end" in
   fun () ->
-  (make_entrance(), make_exit());;
+  (make_start_expansion(), make_env_expand(), make_env_end(), make_push_nil(), make_push_nil_end(), make_after_push_nil(), make_param_copy(), make_param_end(), make_entrance(), make_exit());;
 
 let make_application_labels =
   let make_entrance = make_make_label "L_applic" in
@@ -1594,7 +1602,93 @@ let code_gen e =
         "\tRETURN\n" ^                                    (* body's value is in R0, return to the calling stack frame *)
         exit ^ ":\n"
         in text
-    (* | LambdaOpt' (params, optional, body) -> "lambda opt" *)
+    | LambdaOpt' (params, optional, body) ->
+      let (start_expansion, env_expand, env_end, push_nil, push_nil_end, after_push_nil, param_copy, param_end, entrance, exit) = make_lambda_opt_labels () in
+      let text =
+        start_expansion ^ ":\n" ^
+        "\tPUSH(IMM(" ^ string_of_int (env_size + 1) ^ "))\n" ^   (* R1 = |env| + 1*)
+        "\tCALL(MALLOC)\n" ^        (* allocate space for the expanded environment *)
+        "\tMOV(R1, R0)\n" ^             (* get the address of the space for the expanded environment *)
+        "\tDROP(1)\n" ^
+        "\tMOV(R2, FPARG(0))\n" ^   (* get the old environment *)
+        "\tMOV(R3, IMM(0))\n" ^     (* i = 0 *)
+        "\tMOV(R4, IMM(1))\n" ^     (* j = 1 *)
+        env_expand ^ ":\n" ^                    (* expand environment for the new closure *)
+        "\tCMP(R3, " ^ string_of_int env_size ^ ")\n" ^               (* loop entry condition, i < |env| *)
+        "\tJUMP_EQ(" ^ env_end ^ ")\n" ^
+        "\tMOV(R5, INDD(R2, R3))\n" ^           (* temp = R2[i] *)
+        "\tMOV(INDD(R1, R4), R5)\n" ^           (* R1[j] = temp *)
+        "\tINCR(R3)\n" ^                        (* i++ *)
+        "\tINCR(R4)\n" ^                        (* j++ *)
+        "\tJUMP(" ^ env_expand ^ ")\n" ^
+        env_end ^ ":\n" ^
+        "\tPUSH(FPARG(1))\n" ^                  (* push(n) *)
+        "\tCALL(MALLOC)\n" ^
+        "\tMOV(R3, R0)\n" ^                         (* R3 = MALLOC(n), 'param_copy' *)
+        "\tDROP(1)\n" ^
+        "\tMOV(R4, IMM(2))\n" ^                 (* i = 2, in order to skip the env and n that are on the stack *)
+        "\tMOV(R5, FPARG(1))\n" ^
+        "\tADD(R5, IMM(2))\n" ^                        (* R5 = n + 2 *)
+        param_copy ^ ":\n" ^                          (* copy params to the heap *)
+        "\tCMP(R4, R5)\n" ^                           (* loop entry condition, i < n *)
+        "\tJUMP_EQ(" ^ param_end ^ ")\n" ^
+        "\tMOV(R6, FPARG(R4))\n" ^                    (* temp = param[i] *)
+        "\tMOV(INDD(R3, R4), R6)\n" ^                 (* param_copy[i] = temp *)
+        "\tINCR(R4)\n" ^                              (* i++ *)
+        "\tJUMP(" ^ param_copy ^ ")\n" ^
+        param_end ^ ":\n" ^
+        "\tMOV(INDD(R1, 0), R3)\n" ^                (*new_env[0] = param_copy *)
+        "\tPUSH(IMM(3))\n" ^
+        "\tCALL(MALLOC)\n" ^
+        "\tDROP(1)\n" ^                             (* NOT IN MAYER'S NOTES *)
+        "\tMOV(INDD(R0, 0), IMM(T_CLOSURE))\n" ^    (* set the closure's type tag *)
+        "\tMOV(INDD(R0, 1), R1)\n" ^                (* attach the expanded environment to the closure *)
+        "\tMOV(INDD(R0, 2), LABEL(" ^ entrance ^ "))\n" ^ (* attach the body of the function to the closure *)
+        "\tJUMP(" ^ exit ^ ")\n" ^                        (* closure is built and its address is returned in R0 *)
+        entrance ^ ":\n" ^                                (* when the closure is applied, body execution starts here *)
+        "\tMOV(R0, FPARG(0))\n" ^                     (* FP hasn't been pushed to the stack yet, so n is at FPARG(0) instead of FPARG(1) *)
+        "\tCMP(R0, IMM(" ^ string_of_int (List.length params) ^ "))\n" ^
+        "\tJUMP_GT(" ^ after_push_nil ^ ")\n" ^
+        "\tJUMP_LT(EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS)\n" ^
+        (* if no optional arguments were pushed during application, push a Nil on the stack by force and correct the number of supplied arguments *)
+        "\tMOV(R1, SP)\n" ^     (* R1 = SP *)
+        "\tMOV(R2, R1)\n" ^
+        "\tDECR(R2)\n" ^        (* R2 = SP-1 *)
+        "\tMOV(R3, STACK(R2))\n" ^
+        "\tMOV(STACK(R1), R3)\n" ^      (* shift return adress *)
+        "\tDECR(R1)\n" ^
+        "\tDECR(R2)\n" ^
+        "\tMOV(R3, STACK(R2))\n" ^
+        "\tMOV(STACK(R1), R3)\n" ^      (* shift env *)
+        "\tDECR(R1)\n" ^
+        "\tDECR(R2)\n" ^
+        "\tMOV(R3, STACK(R2))\n" ^
+        "\tMOV(R4, R3)\n" ^             (* R4 = n *)
+        "\tINCR(R3)\n" ^
+        "\tMOV(STACK(R1), R3)\n" ^      (* shift n + 1 *)
+        "\tDECR(R1)\n" ^
+        "\tDECR(R2)\n" ^
+        "\tMOV(R5, IMM(0))\n" ^         (* i = 0 *)
+        push_nil ^ ":\n" ^
+        "\tCMP(R5, R4)\n" ^
+        "\tJUMP_EQ(" ^ push_nil_end ^ ")\n" ^
+        "\tMOV(R3, STACK(R2))\n" ^
+        "\tMOV(STACK(R1), R3)\n" ^
+        "\tDECR(R1)\n" ^
+        "\tDECR(R2)\n" ^
+        "\tINCR(R5)\n" ^
+        "\tJUMP(" ^ push_nil ^ ")\n" ^
+        push_nil_end ^ ":\n" ^
+        "\tMOV(STACK(R1), IMM(MEM_START + 1))\n" ^
+        "\tINCR(SP)\n" ^
+        after_push_nil ^ ":\n" ^
+        "\tPUSH(FP)\n" ^                                  (* save old FP *)
+        "\tMOV(FP, SP)\n" ^                               (* set new FP *)
+        "\t" ^ (run body (env_size + 1))^                 (* execute the function's nody *)
+        "\tPOP(FP)\n" ^                                   (* restore old FP *)
+        "\tRETURN\n" ^                                    (* body's value is in R0, return to the calling stack frame *)
+        exit ^ ":\n"
+        in text
     | Applic' (operator, operands) ->
       let (entrance, exit) = make_application_labels () in
       entrance ^ ":\n" ^
