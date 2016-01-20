@@ -1,9 +1,9 @@
 -symbol->string : consider deep copy vs. shallow copy. Mayers suggetsts using shallow copy.
--append: deep-copy the argument list_to_string
+-append: deep-copy the first argument
 -if statements compare the test value to T_BOOL instead of 0
 -check that an expression with the value 'void' prints out '\n' and not #<void>
--print each expression in the expr' list after code-gening it with WRITE_SOB
--dummy frame at machine initialization
+v-print each expression in the expr' list after code-gening it with WRITE_SOB
+v-dummy frame at machine initialization
 v-test: set
 -test: box
 -test: box-set

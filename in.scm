@@ -53,7 +53,7 @@
 
 #;((lambda s 1))                            ; variadic without arguments - check that Nil is pushed by hand to the stack, and then wrapped in a list: (Nil, Nil)
 
-((lambda (a . d) d) 1 2 3 4 6 7 8 9 10)      ; packing the optional arguments to a list - should return (4 . (6 . (7 . (8 . ()))))
+#;((lambda (a . d) d) 1 2 3 4 6 7 8 9 10)      ; packing the optional arguments to a list - should return (4 . (6 . (7 . (8 . ()))))
 
 #;((lambda s 1) 2 3 4)
 

@@ -2182,7 +2182,15 @@ enter_isVector ^
 exit_isVector ^
 enter_zero ^
 exit_zero ^
-"\n\n\n// *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*- PROGRAM ENTRY POINT *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-\n\n\n";;
+"\n\n\n// *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*- PROGRAM ENTRY POINT *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-\n\n\n" ^
+
+  "
+  PUSH(IMM(0))
+  PUSH(IMM(0))
+  PUSH(IMM(0))
+  PUSH(FP)
+  MOV(FP, SP)
+  "
 
 let printer =
   "
