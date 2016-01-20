@@ -1,10 +1,10 @@
--symbol->string : consider deep copy vs. shallow copy. Mayers suggetsts using shallow copy.
+-symbol->string : consider deep copy vs. shallow copy. Mayer suggests using shallow copy.
 -append: deep-copy the first argument
--if statements compare the test value to T_BOOL instead of 0
--check that an expression with the value 'void' prints out '\n' and not #<void>
+v-if statements should compare the test value to the address of #f
+v-void values by themselves should print nothing, but if they're in a pair or vector, they should print as #<void>
 v-print each expression in the expr' list after code-gening it with WRITE_SOB
 v-dummy frame at machine initialization
-v-test: set
+-test: set
 -test: box
 -test: box-set
 -test: box-get

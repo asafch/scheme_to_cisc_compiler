@@ -1440,8 +1440,10 @@ let make_application_labels =
 let make_application_tp_labels =
   let make_entrance = make_make_label "L_applic_tp" in
   let make_exit = make_make_label "L_applic_tp_end" in
+  let make_drop_frame = make_make_label "L_applic_tp_drop_frame" in
+  let make_drop_frame_end = make_make_label "L_applic_tp_drop_frame_end" in
   fun () ->
-  (make_entrance(), make_exit());;
+  (make_entrance(), make_exit(), make_drop_frame(), make_drop_frame_end());;
 
 let const_table = ref [];;
 
@@ -1461,9 +1463,9 @@ let code_gen e =
           "\tCMP(R0, T_UNDEFINED)\n" ^
           "\tJUMP_EQ(EXCEPTION_UNDEFINED_VARIABLE)\n"
         | VarParam' (var, minor) -> "MOV(R0, FPARG(" ^ string_of_int minor ^ " + 2))\n"
-        | VarBound' (var, major, minor) -> "\tMOV(R0, FPARG(0))\n
-                                            \tMOV(R0, INDD(R0, " ^ string_of_int major ^ "))\n
-                                            \tMOV(R0, INDD(R0, " ^ string_of_int minor ^ "))\n"
+        | VarBound' (var, major, minor) ->  "\tMOV(R0, FPARG(0))\n" ^
+                                            "\tMOV(R0, INDD(R0, " ^ string_of_int major ^ "))\n" ^
+                                            "\tMOV(R0, INDD(R0, " ^ string_of_int minor ^ "))\n"
       end
     | Box' v ->
       begin
@@ -1511,14 +1513,14 @@ let code_gen e =
     | If' (test, dit, dif) ->
       let (in_label, else_label, end_label) = make_if_else_labels () in
       in_label ^ ":\n" ^
-      "\t" ^ (run test env_size) ^ "\n" ^
-      "\tCMP(R0, IND(MEM_START + 3))\n" ^
+      (run test env_size) ^
+      "\tCMP(R0, IMM(MEM_START + 2))\n" ^
       "\tJUMP_EQ(" ^ else_label ^ ")\n" ^
-      "\t" ^ (run dit env_size) ^ "\n" ^
+      (run dit env_size) ^
       "\tJUMP(" ^ end_label ^ ")\n" ^
       else_label ^ ": \n" ^
-      "\t" ^ (run dif env_size) ^ "\n" ^
-      end_label ^ ":\n\n"
+      (run dif env_size) ^
+      end_label ^ ":\n"
     | Seq' exprs' ->
       List.fold_right (fun curr prev -> (run curr env_size) ^ "\n" ^ prev)
                       exprs'
@@ -1582,8 +1584,10 @@ let code_gen e =
         param_copy ^ ":\n" ^                          (* copy params to the heap *)
         "\tCMP(R4, R5)\n" ^                           (* loop entry condition, i < n *)
         "\tJUMP_EQ(" ^ param_end ^ ")\n" ^
+        "\tMOV(R9, R4)\n" ^
+        "\tSUB(R9, IMM(2))\n" ^                       (* R9 is the actual formal index of the parameter. critical for the copying 2 lines ahead to be correct *)
         "\tMOV(R6, FPARG(R4))\n" ^                    (* temp = param[i] *)
-        "\tMOV(INDD(R3, R4), R6)\n" ^                 (* param_copy[i] = temp *)
+        "\tMOV(INDD(R3, R9), R6)\n" ^                 (* param_copy[i] = temp *)
         "\tINCR(R4)\n" ^                              (* i++ *)
         "\tJUMP(" ^ param_copy ^ ")\n" ^
         param_end ^ ":\n" ^
@@ -1601,7 +1605,7 @@ let code_gen e =
         "\tMOV(R15, FPARG(1))\n" ^
         "\tCMP(R15, IMM(" ^ string_of_int (List.length params) ^ "))\n" ^
         "\tJUMP_NE(EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS)\n" ^
-        (run body (env_size + 1)) ^                 (* execute the function's nody *)
+        (run body (env_size + 1)) ^                 (* execute the function's body *)
         "\tPOP(FP)\n" ^                                   (* restore old FP *)
         "\tRETURN\n" ^                                    (* body's value is in R0, return to the calling stack frame *)
         exit ^ ":\n"
@@ -1636,8 +1640,10 @@ let code_gen e =
         param_copy ^ ":\n" ^                          (* copy params to the heap *)
         "\tCMP(R4, R5)\n" ^                           (* loop entry condition, i < n *)
         "\tJUMP_EQ(" ^ param_end ^ ")\n" ^
+        "\tMOV(R9, R4)\n" ^
+        "\tSUB(R9, IMM(2))\n" ^                       (* R9 is the actual formal index of the parameter. critical for the copying 2 lines ahead to be correct *)
         "\tMOV(R6, FPARG(R4))\n" ^                    (* temp = param[i] *)
-        "\tMOV(INDD(R3, R4), R6)\n" ^                 (* param_copy[i] = temp *)
+        "\tMOV(INDD(R3, R9), R6)\n" ^                 (* param_copy[i] = temp *)
         "\tINCR(R4)\n" ^                              (* i++ *)
         "\tJUMP(" ^ param_copy ^ ")\n" ^
         param_end ^ ":\n" ^
@@ -1748,7 +1754,46 @@ let code_gen e =
       "\tPOP(R1)\n" ^
       "\tDROP(R1)\n" ^
       exit ^ ":\n"
-    (* | ApplicTP' (operator, operands) -> "applic tp" *)
+    | ApplicTP' (operator, operands) ->
+      let (entrance, exit, drop_frame, drop_frame_end) = make_application_tp_labels () in
+      entrance ^ ":\n" ^
+      (List.fold_right (fun operand prev -> (run operand env_size) ^ "\tPUSH(R0)\n" ^ prev)
+                      (List.rev operands)
+                      "") ^
+      "\tPUSH(IMM(" ^ string_of_int (List.length operands) ^ "))\n" ^
+      (run operator env_size) ^
+      "\tCMP(IND(R0), IMM(T_CLOSURE))\n" ^
+      "\tJUMP_NE(EXCPETION_APPLYING_NON_PROCEDURE)\n" ^
+      "\tPUSH(INDD(R0, 1))\n" ^                       (* push lexical environment *)
+      "\tMOV(R1, STACK(FP - 1))\n" ^                  (* old FP *)
+      "\tMOV(R2, STACK(FP - 2))\n" ^                  (* old return address *)
+      "\tMOV(R3, FP)\n" ^                             (* pointer to B_(m-1) *)
+      "\tMOV(R4, FP)\n" ^
+      "\tSUB(R4, FPARG(1))\n" ^
+      "\tSUB(R4, IMM(4))\n" ^                         (* pointer to A_(n-1) *)
+      "\tMOV(R5, IMM(0))\n" ^                         (* R5 = i = 0 *)
+      "\tMOV(R6, STARG(0))\n" ^
+      "\tADD(R6, IMM(2))\n" ^                         (* R6 = number of iterations, which is m + 2 *)
+      "\tMOV(R14, STARG(0))\n" ^
+      "\tADD(R14, FPARG(1))\n" ^
+      "\tADD(R14, IMM(1))\n" ^                        (* R14 = n+m+1, the number of cells the FP should drop after the frame has dropped *)
+      "\tMOV(SP, R4)\n" ^               (*???????????*)
+      drop_frame ^ ":\n" ^
+      "\tCMP(R5, R6)\n" ^
+      "\tJUMP_EQ(" ^ drop_frame_end ^ ")\n" ^         (* loop entry condition *)
+      "\tMOV(R7, STACK(R3))\n" ^                      (* R7 = temp = B_i *)
+      "\tPUSH(R7)\n" ^
+      "\tINCR(R3)\n" ^                                (* in the next iteration, move B_(i-1) *)
+      "\tINCR(R5)\n" ^                                (* i++ *)
+      "\tJUMP(" ^ drop_frame ^ ")\n" ^
+      drop_frame_end ^ ":\n" ^
+      "\tPUSH(R2)\n" ^                              (* old return address *)
+      "\tMOV(FP, R1)\n" ^                           (* FP = old FP *)
+      "\tJUMPA(INDD(R0, 2))\n" ^                     (* jump to the closure's body and don't call it, because the return address is already set *)
+      "\tPOP(R1)\n" ^
+      "\tPOP(R1)\n" ^
+      "\tDROP(R1)\n" ^
+      exit ^ ":\n"
     | _ -> raise (X_why "codegen")
     in
   run e 0;;
@@ -2194,11 +2239,12 @@ exit_zero ^
 
 let printer =
   "
+
   PUSH(R0)
-  CALL(WRITE_SOB)
-  PUSH(IMM('\\n'))
-  CALL(PUTCHAR)
-  DROP(2)";;
+  CALL(WRITE_SOB_IF_NOT_VOID)
+  DROP(1)
+
+  ";;
 
 let epilogue =
   "
@@ -2222,7 +2268,10 @@ let compile_scheme_file scm_source_file asm_target_file =
                                 "" in
     string_to_file asm_target_file (make_prologue () ^
                                     code ^
-                                    epilogue)
+                                    epilogue);
+    const_table := [];
+    free_var_table := [];
+    symbol_table := [];
   end
 end;;
 

@@ -24,6 +24,7 @@
 #include "lib/scheme/write_sob_nil.asm"
 #include "lib/scheme/write_sob_bool.asm"
 #include "lib/scheme/write_sob_char.asm"
+#include "lib/scheme/write_sob_if_not_void.asm"
 #include "lib/scheme/write_sob_integer.asm"
 #include "lib/scheme/write_sob_fraction.asm"
 #include "lib/scheme/write_sob_pair.asm"

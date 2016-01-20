@@ -11,4 +11,4 @@ pre:
 PHONY: .clean
 
 clean:
-	rm -rf *.o example
+	rm -rf *.o out

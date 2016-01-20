@@ -7,19 +7,19 @@
  */
 
  WRITE_SOB_VOID:
-  // PUSH(IMM('#'));
-  // CALL(PUTCHAR);
-  // PUSH(IMM('<'));
-  // CALL(PUTCHAR);
-  // PUSH(IMM('v'));
-  // CALL(PUTCHAR);
-  // PUSH(IMM('o'));
-  // CALL(PUTCHAR);
-  // PUSH(IMM('i'));
-  // CALL(PUTCHAR);
-  // PUSH(IMM('d'));
-  // CALL(PUTCHAR);
-  // PUSH(IMM('>'));
-  // CALL(PUTCHAR);
-  // DROP(7);
+  PUSH(IMM('#'));
+  CALL(PUTCHAR);
+  PUSH(IMM('<'));
+  CALL(PUTCHAR);
+  PUSH(IMM('v'));
+  CALL(PUTCHAR);
+  PUSH(IMM('o'));
+  CALL(PUTCHAR);
+  PUSH(IMM('i'));
+  CALL(PUTCHAR);
+  PUSH(IMM('d'));
+  CALL(PUTCHAR);
+  PUSH(IMM('>'));
+  CALL(PUTCHAR);
+  DROP(7);
   RETURN;
