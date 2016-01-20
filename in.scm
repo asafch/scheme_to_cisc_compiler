@@ -20,11 +20,11 @@
 
 #;(if #f 3)                                 ; if without else clause, test evaluates to #f, should return void
 
-#;`(1 2 'k)                                 ; quasiquote
+#;`(1 2 'k)                                 ; quasiquote - not yet implemented
 
-#;`(1 ,2 'k)                                ; quasiquote with unquote
+#;`(1 ,2 'k)                                ; quasiquote with unquote - not yet implemented
 
-#;`(1 ,@2 'k)                               ; quasiquote with unquote-splicing
+#;`(1 ,@2 'k)                               ; quasiquote with unquote-splicing - not yet implemented
 
 #;(begin 1 2 3)                             ; sequence
 

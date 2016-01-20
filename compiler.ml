@@ -2116,12 +2116,16 @@ EXCPETION_APPLYING_NON_PROCEDURE:
   HALT
 
 EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS:
-  printf(\"Exception: applying closure on wrong number of argumens, given: %ld\\n\", FPARG(1));
+  printf(\"Exception: applying closure on wrong number of arguments, given: %ld\\n\", FPARG(1));
   HALT
 
 EXCEPTION_UNDEFINED_VARIABLE:
   printf(\"Exception: undefined variable\\n\");
   HALT
+
+EXCEPTION_NOT_A_PAIR:
+printf(\"Exception: argument is not a pair\\n\");
+HALT
 
 CONTINUE:
 PUSH(IMM(1 + " ^ string_of_int !const_tab_length ^ "))
@@ -2156,8 +2160,22 @@ exit_minus ^
 enter_boolean ^
 exit_boolean ^
 enter_car ^
+  "
+  CMP(FPARG(1), IMM(1))
+  JUMP_NE(EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS)
+  MOV(R0, FPARG(2))
+  CMP(IND(R0), IMM(T_PAIR))
+  JUMP_NE(EXCEPTION_NOT_A_PAIR)
+  MOV(R0, INDD(R0, 1))" ^
 exit_car ^
 enter_cdr ^
+  "
+  CMP(FPARG(1), IMM(1))
+  JUMP_NE(EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS)
+  MOV(R0, FPARG(2))
+  CMP(IND(R0), IMM(T_PAIR))
+  JUMP_NE(EXCEPTION_NOT_A_PAIR)
+  MOV(R0, INDD(R0, 2))" ^
 exit_cdr ^
 enter_chartointeger ^
 exit_chartointeger ^
@@ -2190,6 +2208,19 @@ exit_number ^
 enter_numerator ^
 exit_numerator ^
 enter_pair ^
+  "
+  CMP(FPARG(1), IMM(1))
+  JUMP_NE(EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS)
+  MOV(R0, FPARG(2))
+  CMP(IND(R0), IMM(T_PAIR))
+  JUMP_NE(L_not_a_pair)
+L_is_pair:
+  MOV(R0, IMM(MEM_START + " ^ string_of_int (const_lookup (Bool true) !const_table) ^ "))
+  JUMP(L_after_is_pair)
+L_not_a_pair:
+  MOV(R0, IMM(MEM_START + " ^ string_of_int (const_lookup (Bool false) !const_table) ^ "))
+  JUMP(L_after_is_pair)
+L_after_is_pair:" ^
 exit_pair ^
 enter_procedure ^
 exit_procedure ^
@@ -2235,6 +2266,9 @@ exit_zero ^
   PUSH(IMM(0))
   PUSH(FP)
   MOV(FP, SP)
+
+
+
   "
 
 let printer =
