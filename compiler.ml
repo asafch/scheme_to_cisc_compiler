@@ -1719,7 +1719,6 @@ let code_gen e =
         "\tDECR(R2)\n" ^                            (* i-- *)
         "\tJUMP(" ^ pack_args ^ ")\n" ^
         after_pack_args ^ ":\n" ^
-        (* "\tADD(R3, IMM(2))\n" ^  *)
         "\tMOV(STARG(R3), R1)\n" ^                  (* after all the mandatory arguments, insert the list of optional arguments *) (* R3 is the position under SP-2 of the first argument after the mandatory arguments *)
         "\tMOV(R4, STARG(1))\n" ^                   (* R4 = n+d *)
         "\tMOV(R5, STARG(1))\n" ^
