@@ -1428,8 +1428,10 @@ let make_lambda_opt_labels =
   let make_exit = make_make_label "L_lambda_opt_end" in
   let make_drop_frame = make_make_label "L_lambda_opt_drop_frame" in
   let make_drop_frame_end = make_make_label "L_lambda_opt_drop_frame_end" in
+  let make_no_frame_drop = make_make_label "L_lambda_opt_no_frame_drop" in
+  let make_not_variadic = make_make_label "L_lambda_opt_not_variadic" in
   fun () ->
-  (make_start_expansion(), make_env_expand(), make_env_end(), make_push_nil(), make_push_nil_end(), make_after_push_nil(), make_pack_args(), make_pack_args_end(), make_param_copy(), make_param_end(), make_entrance(), make_exit(), make_drop_frame(), make_drop_frame_end());;
+  (make_start_expansion(), make_env_expand(), make_env_end(), make_push_nil(), make_push_nil_end(), make_after_push_nil(), make_pack_args(), make_pack_args_end(), make_param_copy(), make_param_end(), make_entrance(), make_exit(), make_drop_frame(), make_drop_frame_end(), make_no_frame_drop(), make_not_variadic());;
 
 let make_application_labels =
   let make_entrance = make_make_label "L_applic" in
@@ -1611,7 +1613,7 @@ let code_gen e =
         exit ^ ":\n"
         in text
     | LambdaOpt' (params, optional, body) ->
-      let (start_expansion, env_expand, env_end, push_nil, push_nil_end, after_push_nil, pack_args, after_pack_args, param_copy, param_end, entrance, exit, drop_frame, drop_frame_end) = make_lambda_opt_labels () in
+      let (start_expansion, env_expand, env_end, push_nil, push_nil_end, after_push_nil, pack_args, after_pack_args, param_copy, param_end, entrance, exit, drop_frame, drop_frame_end, no_frame_drop, not_variadic) = make_lambda_opt_labels () in
       let text =
         start_expansion ^ ":\n" ^
         "\tPUSH(IMM(" ^ string_of_int (env_size + 1) ^ "))\n" ^   (* R1 = |env| + 1*)
@@ -1682,15 +1684,22 @@ let code_gen e =
         push_nil ^ ":\n" ^
         "\tCMP(R5, R4)\n" ^
         "\tJUMP_EQ(" ^ push_nil_end ^ ")\n" ^
-        "\tMOV(R3, STACK(R2))\n" ^
+        "\tMOV(R13, IMM(1))\n" ^
+        "\tMOV(R3, STACK(R2))\n" ^                        (* boolean flag: LambdaOpt (not variadic) without optional parameters, so don't drop the frame *)
         "\tMOV(STACK(R1), R3)\n" ^
         "\tDECR(R1)\n" ^
         "\tDECR(R2)\n" ^
         "\tINCR(R5)\n" ^
         "\tJUMP(" ^ push_nil ^ ")\n" ^
         push_nil_end ^ ":\n" ^
+        "\tCMP(R4, IMM(0))\n" ^                           (* a variadic lambda that was applied with 0 args won't set the boolean flag, so set it here *)
+        "\tJUMP_NE(" ^ not_variadic ^ ")\n" ^
+        "\tMOV(R13, IMM(1))\n" ^
+        not_variadic ^ ":\n" ^
         "\tMOV(STACK(R1), IMM(MEM_START + 1))\n" ^        (* insert Nil's address to the stack *)
         "\tINCR(SP)\n" ^
+        "\tCMP(R13, IMM(1))\n" ^
+        "\tJUMP_EQ(" ^ no_frame_drop ^ ")\n" ^            (* if no optional arguments were supplied at applicatio, there's no need to drop the frame *)
         after_push_nil ^ ":\n" ^
         (* pack all optional arguments to a list, and fix the stack structure *)
         "\tMOV(R1, IMM(MEM_START + 1))\n" ^         (* R1 = address of Nil *)
@@ -1710,6 +1719,7 @@ let code_gen e =
         "\tDECR(R2)\n" ^                            (* i-- *)
         "\tJUMP(" ^ pack_args ^ ")\n" ^
         after_pack_args ^ ":\n" ^
+        (* "\tADD(R3, IMM(2))\n" ^  *)
         "\tMOV(STARG(R3), R1)\n" ^                  (* after all the mandatory arguments, insert the list of optional arguments *) (* R3 is the position under SP-2 of the first argument after the mandatory arguments *)
         "\tMOV(R4, STARG(1))\n" ^                   (* R4 = n+d *)
         "\tMOV(R5, STARG(1))\n" ^
@@ -1731,6 +1741,7 @@ let code_gen e =
         "\tJUMP(" ^ drop_frame ^ ")\n" ^
         drop_frame_end ^ ":\n" ^
         "\tDROP(R5)\n" ^                                (* set SP to correct position after dropping the frame *)
+        no_frame_drop ^ ":\n" ^
         "\tPUSH(FP)\n" ^                                  (* save old FP *)
         "\tMOV(FP, SP)\n" ^                               (* set new FP *)
         (run body (env_size + 1)) ^                 (* execute the function's nody *)

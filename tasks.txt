@@ -8,8 +8,9 @@ v-dummy frame at machine initialization
 -test: box
 -test: box-set
 -test: box-get
--ApplicTP
--LambdaOpt
+v-ApplicTP
+v-LambdaOpt
+_applying a variadic lambda on no arguments should return '() and not '(() . ())
 -library functions
   append (variadic)
   apply
@@ -20,8 +21,8 @@ v-dummy frame at machine initialization
   / (variadic)
   * (variadic)
   boolean?
-  car
-  cdr
+v  car
+v  cdr
   char->integer
   char?
   cons
@@ -37,7 +38,7 @@ v-dummy frame at machine initialization
   null?
   number?
   numerator
-  pair?
+v  pair?
   procedure?
   rational?
   remainder
