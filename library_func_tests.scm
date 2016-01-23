@@ -5,7 +5,18 @@
 #;(append '(1) 2)                             ; exception - l2 not a list
 
 ;apply
-
+#;(apply (lambda (x) x) '("application"))     ; "application"
+#;(apply cons 1 '(2))                         ; (1 . 2)
+#;(apply cons cons '(cons))                   ; (#<procedure cons> . cons)
+;(define fact-tail
+;    (lambda (n acc)
+;      (if (= 1 n)
+;          acc
+;          (fact-tail (- n 1) (* n acc)))))
+#;(apply fact-tail 5 '(1))                    ; 120
+#;(apply cons 1 2)                            ; exception - not a proper list
+#;(apply)                                     ; exception - wrong number of arguments
+#;(apply cons)                                ; exception - wrong number of arguments
 
 ;< (variadic)
 #;(< 1 2)                                     ; #t
@@ -152,68 +163,154 @@
 #;(null? null?)                               ; #f
 
 ;number?
-
+#;(number? -1)                                ; #t
+#;(number? -3/14)                             ; #t
+#;(number? #t)                                ; #f
+#;(number "hello, world!")                    ; #f
+#;(number?)                                   ; excpetion - wrong number of arguments
+#;(number? 1 2)                               ; excpetion - wrong number of arguments
 
 ;numerator
-
+#;(numerator 4/2)                             ; 2
+#;(numerator -7/17)                           ; -7
+#;(numerator 3)                               ; 3
+#;(numerator 'const)                          ; exception - not a fraction
+#;(numerator)                                 ; excpetion - wrong number of arguments
+#;(numerator 1/2 1/3)                         ; excpetion - wrong number of arguments
 
 ;pair?
-#;(pair? '(1 2))
-#;(pair? '())
-#;(pair?)
-#;(pair? 5)
-#;(pair? '(1 2) '(9))
+#;(pair? '(1 2))                              ; #t
+#;(pair? '())                                 ; #f
+#;(pair?)                                     ; excpetion - wrong number of arguments
+#;(pair? 5)                                   ; #f
+#;(pair? '(1 2) '(9))                         ; excpetion - wrong number of arguments
 
 ;procedure?
-
+#;(procedure? procedure?)                     ; #t
+#;(procedure? (lambda s (car s)))             ; #t
+#;(procedure? #t)                             ; #f
+#;(procedure?)                                ; excpetion - wrong number of arguments
+#;(procedure? cons car cdr list)              ; excpetion - wrong number of arguments
 
 ;rational?
-
+#;(rational? 5/2)                             ; #t
+#;(rational? -99)                             ; #t
+#;(rational? 0xffff)                          ; #t
+#;(rational? "rational?")                     ; #f
+#;(rational?)                                 ; excpetion - wrong number of arguments
+#;(rational? 1/4 1/7)                         ; excpetion - wrong number of arguments
 
 ;remainder
-
+#;(remainder 12 -5)                           ; 2
+#;(remainder 70 7)                            ; 0
+#;(remainder 0xffff 0xfffe)                   ; 1
+#;(remainder 2 "cookies")                     ; exception - not an integer
+#;(remainder 2 1/2)                           ; exception - not an integer
+#;(remainder)                                 ; excpetion - wrong number of arguments
+#;(remainder 1 2 3)                           ; excpetion - wrong number of arguments
 
 ;set-car!
-
+#;(set-car! '(a b c) '(x y z))                ; #<void>, print nothing
+#;(set-car! '() 5)                            ; exception - not a pair
+#;(set-car! "set-car!" set-car!)              ; exception - not a pair
+#;(set-car! '(1 2 3) (cdr '(1 2 3)))          ; #<void>, print nothing
+#;(set-car!)                                  ; excpetion - wrong number of arguments
 
 ;set-cdr!
-
+#;(set-cdr! '(a b c) '(x y z))                ; #<void>, print nothing
+#;(set-cdr! '() 5)                            ; exception - not a pair
+#;(set-cdr! "set-cdr!" sdt-car!)              ; exception - not a pair
+#;(set-cdr! '(1 2 3) (cdr '(1 2 3)))          ; #<void>, print nothing
+#;(set-cdr!)                                  ; excpetion - wrong number of arguments
 
 ;string-length
-
+#;(string-length "")                          ; 0
+#;(string-length "a")                         ; 1
+#;(string-length 5)                           ; exception - not a string
+#;(string-length)                             ; excpetion - wrong number of arguments
+#;(string-length "a" "a")                     ; excpetion - wrong number of arguments
 
 ;string-ref
-
+#;(string-ref "string" 1)                     ; #\t
+#;(string-ref 'string 1)                      ; exception - not a symbol
+#;(string-ref "string" 99)                    ; exception - out of bounds
+#;(string-ref)                                ; excpetion - wrong number of arguments
+#;(string-ref "string")                       ; excpetion - wrong number of arguments
+#;(string-ref "string" 1 2)                   ; excpetion - wrong number of arguments
 
 ;string-set!
-
+#;(string-set! "string" 1 #\p)                ; MIT doesn't specify
+#;(string-set! "string" 95 #\o)               ; exception - out of bounds
+#;(string-set! "string" 1 "kk")               ; exception - not a char
+#;(string-set! 'string 1 #\p)                 ; exception - not a string
+#;(string-set! "string" 1/2 #\p)              ; exception - not an integer
+#;(string-set!)                               ; excpetion - wrong number of arguments
+#;(string-set! "wstring" 1)                   ; excpetion - wrong number of arguments
+#;(string-set! "wwstring" 0 #\r #\l)          ; excpetion - wrong number of arguments
 
 ;string->symbol
-
+#;(string->symbol 'sym)                       ; exception - not a string
+#;(string->symbol "sym")                      ; sym
+#;(string->symbol)                            ; excpetion - wrong number of arguments
+#;(string->symbol "str" "sym")                ; excpetion - wrong number of arguments
 
 ;string?
-
+#;(string? "string")                          ; #t
+#;(string? 'string)                           ; #f
+#;(string? 2)                                 ; #f
+#;(string? "yes" "no")                        ; excpetion - wrong number of arguments
+#;(string?)                                   ; excpetion - wrong number of arguments
 
 ;symbol?
-
+#;(symbol? 'symbol)                           ; #t
+#;(symbol? "symbol")                          ; #f
+#;(symbol? 2)                                 ; #f
+#;(symbol? 'yes 'no)                          ; excpetion - wrong number of arguments
+#;(symbol?)                                   ; excpetion - wrong number of arguments
 
 ;symbol->string
-
-
+#;(symbol->string 'sym)                       ; "sym"
+#;(symbol->string "sym")                      ; exception - not a symbol
+#;(symbol->string)                            ; excpetion - wrong number of arguments
+#;(symbol->string 'a 'b)                      ; excpetion - wrong number of arguments
 
 ;vector
-
+#;(vector vector vector)                      ; #(#<procedure...> #<procedure...>)
+#;(vector 'a 1 1/1 "uno" 'einz)               ; #(a 1 1 "uno" einz)
+#;(vector)                                    ; #()
 
 ;vector-length
-
+#;(vector-length '#())                        ; 0
+#;(vector-length '#(vector? vector-ref))      ; 2
+#;(vector-length '#(1) '#(2))                 ; excpetion - wrong number of arguments
+#;(vector-length)                             ; excpetion - wrong number of arguments
+#;(vector-length '(v v v))                    ; exception - not a vector
 
 ;vector-ref
-
+#;(vector-ref '#(1 2 3) 0)                    ; 1
+#;(vector-ref '#(1 2 3) 3)                    ; exception - out of bounds
+#;(vector-ref '#(1 2 3))                      ; excpetion - wrong number of arguments
+#;(vector-ref '#(1 2 3) 0 1)                  ; excpetion - wrong number of arguments
+#;(vector-ref "'#(1 2 3)" 0)                  ; exception - not a vector
 
 ;vector-set!
-
+#;(vector-set! '#(4 5 6) 1 7)                 ; MIT doesn't specify
+#;(vector-set! '#(4 5 6) 3 7)                 ; exception - out of bounds
+#;(vector-set! "vector" 1 2)                  ; exception - not a vector
+#;(vector-set!)                               ; excpetion - wrong number of arguments
+#;(vector-set! '#(4 5 6) 1)                   ; excpetion - wrong number of arguments
+#;(vector-set! '#(4 5 6) 1 7 8)               ; excpetion - wrong number of arguments
 
 ;vector?
-
+#;(vector? '#(some-vector...))                ; #t
+#;(vector? "no")                              ; #f
+#;(vector? '#(1 b 3 d 5 f))                   ; #t
+#;(vector?)                                   ; excpetion - wrong number of arguments
+#;(vector? 1 2)                               ; excpetion - wrong number of arguments
 
 ;zero?
+#;(zero? 0)                                   ; #t
+#;(zero? #f)                                  ; #f
+#;(zero? (- 5 (+ 1 2 2)))                     ; #t
+#;(zero?)                                     ; excpetion - wrong number of arguments
+#;(zero? 0 0)                                 ; excpetion - wrong number of arguments
