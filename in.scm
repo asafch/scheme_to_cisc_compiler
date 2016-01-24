@@ -64,3 +64,5 @@
 
 #;(define v (if #f 1))                      ; void values that result from set!, set-car!, set-cdr! and define should print nothin, but if the void is wrapped in a pair or vector, it should print #<void>. this test should print: (#<void> . (#<void> . (#<void> . ())))
 #;((lambda s s) v v v)
+
+(pair? '(1))

@@ -2046,7 +2046,6 @@ L_" ^ cropped_func_name ^ ":
   RETURN
 L_exit_" ^ cropped_func_name ^ ":\n\n\n");;
 
-
 let make_prologue () =
 let (enter_append, exit_append) = make_library_func_string "append" in
 let (enter_apply, exit_apply) = make_library_func_string "apply" in
@@ -2168,6 +2167,18 @@ exit_mul ^
 enter_minus ^
 exit_minus ^
 enter_boolean ^
+"
+  CMP(FPARG(1), IMM(1))
+  JUMP_NE(EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS)
+  MOV(R0, FPARG(2))
+  CMP(IND(R0), IMM(T_BOOL))
+  JUMP_NE(L_not_bool)
+L_is_bool:
+  MOV(R0, IMM(MEM_START + " ^ string_of_int (const_lookup (Bool true) !const_table) ^ "))
+  JUMP(L_after_is_bool)
+L_not_bool:
+  MOV(R0, IMM(MEM_START + " ^ string_of_int (const_lookup (Bool false) !const_table) ^ "))
+L_after_is_bool:" ^
 exit_boolean ^
 enter_car ^
   "
@@ -2190,6 +2201,18 @@ exit_cdr ^
 enter_chartointeger ^
 exit_chartointeger ^
 enter_char ^
+"
+  CMP(FPARG(1), IMM(1))
+  JUMP_NE(EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS)
+  MOV(R0, FPARG(2))
+  CMP(IND(R0), IMM(T_CHAR))
+  JUMP_NE(L_not_a_char)
+L_is_char:
+  MOV(R0, IMM(MEM_START + " ^ string_of_int (const_lookup (Bool true) !const_table) ^ "))
+  JUMP(L_after_is_char)
+L_not_a_char:
+  MOV(R0, IMM(MEM_START + " ^ string_of_int (const_lookup (Bool false) !const_table) ^ "))
+L_after_is_char:" ^
 exit_char ^
 enter_cons ^
 exit_cons ^
@@ -2198,6 +2221,18 @@ exit_denominator ^
 enter_eq ^
 exit_eq ^
 enter_integer ^
+"
+  CMP(FPARG(1), IMM(1))
+  JUMP_NE(EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS)
+  MOV(R0, FPARG(2))
+  CMP(IND(R0), IMM(T_INTEGER))
+  JUMP_NE(L_not_integer)
+L_is_integer:
+  MOV(R0, IMM(MEM_START + " ^ string_of_int (const_lookup (Bool true) !const_table) ^ "))
+  JUMP(L_after_is_integer)
+L_not_integer:
+  MOV(R0, IMM(MEM_START + " ^ string_of_int (const_lookup (Bool false) !const_table) ^ "))
+L_after_is_integer:" ^
 exit_integer ^
 enter_integertochar ^
 exit_integertochar ^
@@ -2212,8 +2247,34 @@ exit_map ^
 enter_not ^
 exit_not ^
 enter_null ^
+"
+  CMP(FPARG(1), IMM(1))
+  JUMP_NE(EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS)
+  MOV(R0, FPARG(2))
+  CMP(IND(R0), IMM(T_NIL))
+  JUMP_NE(L_not_null)
+L_is_null:
+  MOV(R0, IMM(MEM_START + " ^ string_of_int (const_lookup (Bool true) !const_table) ^ "))
+  JUMP(L_after_is_null)
+L_not_null:
+  MOV(R0, IMM(MEM_START + " ^ string_of_int (const_lookup (Bool false) !const_table) ^ "))
+L_after_is_null:" ^
 exit_null ^
 enter_number ^
+"
+  CMP(FPARG(1), IMM(1))
+  JUMP_NE(EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS)
+  MOV(R0, FPARG(2))
+  CMP(IND(R0), IMM(T_INTEGER))
+  JUMP_EQ(L_is_number)
+  CMP(IND(R0), IMM(T_FRACTION))
+  JUMP_NE(L_not_number)
+L_is_number:
+  MOV(R0, IMM(MEM_START + " ^ string_of_int (const_lookup (Bool true) !const_table) ^ "))
+  JUMP(L_after_is_number)
+L_not_number:
+  MOV(R0, IMM(MEM_START + " ^ string_of_int (const_lookup (Bool false) !const_table) ^ "))
+L_after_is_number:" ^
 exit_number ^
 enter_numerator ^
 exit_numerator ^
@@ -2229,12 +2290,37 @@ L_is_pair:
   JUMP(L_after_is_pair)
 L_not_a_pair:
   MOV(R0, IMM(MEM_START + " ^ string_of_int (const_lookup (Bool false) !const_table) ^ "))
-  JUMP(L_after_is_pair)
 L_after_is_pair:" ^
 exit_pair ^
 enter_procedure ^
+"
+  CMP(FPARG(1), IMM(1))
+  JUMP_NE(EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS)
+  MOV(R0, FPARG(2))
+  CMP(IND(R0), IMM(T_CLOSURE))
+  JUMP_NE(L_not_a_procedure)
+L_is_procedure:
+  MOV(R0, IMM(MEM_START + " ^ string_of_int (const_lookup (Bool true) !const_table) ^ "))
+  JUMP(L_after_is_procedure)
+L_not_a_procedure:
+  MOV(R0, IMM(MEM_START + " ^ string_of_int (const_lookup (Bool false) !const_table) ^ "))
+L_after_is_procedure:" ^
 exit_procedure ^
 enter_rational ^
+"
+  CMP(FPARG(1), IMM(1))
+  JUMP_NE(EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS)
+  MOV(R0, FPARG(2))
+  CMP(IND(R0), IMM(T_FRACTION))
+  JUMP_EQ(L_is_fraction)
+  CMP(IND(R0), IMM(T_INTEGER))
+  JUMP_NE(L_not_a_fraction)
+L_is_fraction:
+  MOV(R0, IMM(MEM_START + " ^ string_of_int (const_lookup (Bool true) !const_table) ^ "))
+  JUMP(L_after_is_fraction)
+L_not_a_fraction:
+  MOV(R0, IMM(MEM_START + " ^ string_of_int (const_lookup (Bool false) !const_table) ^ "))
+L_after_is_fraction:" ^
 exit_rational ^
 enter_remainder ^
 exit_remainder ^
@@ -2251,8 +2337,32 @@ exit_stringset ^
 enter_stringtosymbol ^
 exit_stringtosymbol ^
 enter_string ^
+"
+  CMP(FPARG(1), IMM(1))
+  JUMP_NE(EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS)
+  MOV(R0, FPARG(2))
+  CMP(IND(R0), IMM(T_STRING))
+  JUMP_NE(L_not_a_string)
+L_is_string:
+  MOV(R0, IMM(MEM_START + " ^ string_of_int (const_lookup (Bool true) !const_table) ^ "))
+  JUMP(L_after_is_string)
+L_not_a_string:
+  MOV(R0, IMM(MEM_START + " ^ string_of_int (const_lookup (Bool false) !const_table) ^ "))
+L_after_is_string:" ^
 exit_string ^
 enter_symbol ^
+"
+  CMP(FPARG(1), IMM(1))
+  JUMP_NE(EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS)
+  MOV(R0, FPARG(2))
+  CMP(IND(R0), IMM(T_SYMBOL))
+  JUMP_NE(L_not_a_symbol)
+L_is_symbol:
+  MOV(R0, IMM(MEM_START + " ^ string_of_int (const_lookup (Bool true) !const_table) ^ "))
+  JUMP(L_after_is_symbol)
+L_not_a_symbol:
+  MOV(R0, IMM(MEM_START + " ^ string_of_int (const_lookup (Bool false) !const_table) ^ "))
+L_after_is_symbol:" ^
 exit_symbol ^
 enter_symboltostring ^
 exit_symboltostring ^
@@ -2265,8 +2375,39 @@ exit_vectorref ^
 enter_vectorset ^
 exit_vectorset ^
 enter_isVector ^
+"
+  CMP(FPARG(1), IMM(1))
+  JUMP_NE(EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS)
+  MOV(R0, FPARG(2))
+  CMP(IND(R0), IMM(T_VECTOR))
+  JUMP_NE(L_not_a_vector)
+L_is_vector:
+  MOV(R0, IMM(MEM_START + " ^ string_of_int (const_lookup (Bool true) !const_table) ^ "))
+  JUMP(L_after_is_vector)
+L_not_a_vector:
+  MOV(R0, IMM(MEM_START + " ^ string_of_int (const_lookup (Bool false) !const_table) ^ "))
+L_after_is_vector:" ^
 exit_isVector ^
 enter_zero ^
+"
+  CMP(FPARG(1), IMM(1))
+  JUMP_NE(EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS)
+  MOV(R0, FPARG(2))
+  MOV(R12, IMM(0))
+  CMP(IND(R0), IMM(T_INTEGER))
+  MOV(R12, TR)
+  CMP(IND(R0), IMM(T_FRACTION))
+  OR(R12, TR)
+  CMP(R12, IMM(0))
+  JUMP_EQ(L_not_a_zero)
+  CMP(INDD(R0, 1), IMM(0))
+  JUMP_NE(L_not_a_zero)
+L_is_zero:
+  MOV(R0, IMM(MEM_START + " ^ string_of_int (const_lookup (Bool true) !const_table) ^ "))
+  JUMP(L_after_is_zero)
+L_not_a_zero:
+  MOV(R0, IMM(MEM_START + " ^ string_of_int (const_lookup (Bool false) !const_table) ^ "))
+L_after_is_zero:" ^
 exit_zero ^
 "\n\n\n// *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*- PROGRAM ENTRY POINT *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-\n\n\n" ^
 
