@@ -6,7 +6,7 @@
 /* change to 0 for no debug info to be printed: */
 #define DO_SHOW 1
 #define MEM_START 2
-#define FREE_VAR_TAB_START (MEM_START + 24)
+#define FREE_VAR_TAB_START (MEM_START + 11)
 #define SYM_TAB_START (FREE_VAR_TAB_START + 46)
 
 #include "cisc.h"
@@ -49,24 +49,19 @@ EXCEPTION_NOT_AN_INTEGER:
 printf("Exception: argument is not an integer\n");
 HALT
 
+EXCEPTION_NOT_A_STRING:
+printf("Exception: argument is not a string\n");
+HALT
+
 CONTINUE:
-PUSH(IMM(1 + 24))
+PUSH(IMM(1 + 11))
 CALL(MALLOC) //allocate memory for constants
 DROP(1)
-long consts[24] = {T_VOID, T_NIL
+long consts[11] = {T_VOID, T_NIL
 , T_BOOL, 0
 , T_BOOL, 1
-, T_INTEGER, 12
-, T_INTEGER, -5
-, T_INTEGER, 70
-, T_INTEGER, 7
-, T_INTEGER, 65535
-, T_INTEGER, 65534
-, T_INTEGER, 1
-, T_INTEGER, 2
-, T_INTEGER, 3
-};
-memcpy(M(mem) + MEM_START, consts, sizeof(long) * 24);
+, T_STRING, 0, T_STRING, 1, 'a'};
+memcpy(M(mem) + MEM_START, consts, sizeof(long) * 11);
 
 PUSH(IMM(46))
 CALL(MALLOC) //allocate memory for all free variables in the program
@@ -932,6 +927,18 @@ JUMP(L_exit_string_length)
 L_string_length:
   PUSH(FP)
   MOV(FP, SP)
+  CMP(FPARG(1), IMM(1))
+  JUMP_NE(EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS)
+  MOV(R1, FPARG(2))
+  CMP(IND(R1), IMM(T_STRING))
+  JUMP_NE(EXCEPTION_NOT_A_STRING)
+  MOV(R1, INDD(R1, 1))
+  PUSH(IMM(2))
+  CALL(MALLOC)
+  DROP(1)
+  MOV(INDD(R0, 0), IMM(T_INTEGER))
+  MOV(INDD(R0, 1), R1)
+L_string_length_end:
 	POP(FP)
   RETURN
 L_exit_string_length:
@@ -1229,13 +1236,11 @@ L_exit_zero:
 
 
 
-  L_applic_19:
-	MOV(R0, IMM(MEM_START + 8))
-	PUSH(R0)
+  L_applic_10:
 	MOV(R0, IMM(MEM_START + 6))
 	PUSH(R0)
-	PUSH(IMM(2))
-	MOV(R0, INDD(FREE_VAR_TAB_START, 30))
+	PUSH(IMM(1))
+	MOV(R0, INDD(FREE_VAR_TAB_START, 33))
 	CMP(R0, T_UNDEFINED)
 	JUMP_EQ(EXCEPTION_UNDEFINED_VARIABLE)
 	CMP(IND(R0), IMM(T_CLOSURE))
@@ -1245,20 +1250,18 @@ L_exit_zero:
 	POP(R1)
 	POP(R1)
 	DROP(R1)
-L_lapplic_end_19:
+L_lapplic_end_10:
 
 
   PUSH(R0)
   CALL(WRITE_SOB_IF_NOT_VOID)
   DROP(1)
 
-  L_applic_20:
-	MOV(R0, IMM(MEM_START + 12))
+  L_applic_11:
+	MOV(R0, IMM(MEM_START + 8))
 	PUSH(R0)
-	MOV(R0, IMM(MEM_START + 10))
-	PUSH(R0)
-	PUSH(IMM(2))
-	MOV(R0, INDD(FREE_VAR_TAB_START, 30))
+	PUSH(IMM(1))
+	MOV(R0, INDD(FREE_VAR_TAB_START, 33))
 	CMP(R0, T_UNDEFINED)
 	JUMP_EQ(EXCEPTION_UNDEFINED_VARIABLE)
 	CMP(IND(R0), IMM(T_CLOSURE))
@@ -1268,20 +1271,20 @@ L_lapplic_end_19:
 	POP(R1)
 	POP(R1)
 	DROP(R1)
-L_lapplic_end_20:
+L_lapplic_end_11:
 
 
   PUSH(R0)
   CALL(WRITE_SOB_IF_NOT_VOID)
   DROP(1)
 
-  L_applic_21:
-	MOV(R0, IMM(MEM_START + 16))
+  L_applic_12:
+	MOV(R0, IMM(MEM_START + 8))
 	PUSH(R0)
-	MOV(R0, IMM(MEM_START + 14))
+	MOV(R0, IMM(MEM_START + 8))
 	PUSH(R0)
 	PUSH(IMM(2))
-	MOV(R0, INDD(FREE_VAR_TAB_START, 30))
+	MOV(R0, INDD(FREE_VAR_TAB_START, 33))
 	CMP(R0, T_UNDEFINED)
 	JUMP_EQ(EXCEPTION_UNDEFINED_VARIABLE)
 	CMP(IND(R0), IMM(T_CLOSURE))
@@ -1291,32 +1294,7 @@ L_lapplic_end_20:
 	POP(R1)
 	POP(R1)
 	DROP(R1)
-L_lapplic_end_21:
-
-
-  PUSH(R0)
-  CALL(WRITE_SOB_IF_NOT_VOID)
-  DROP(1)
-
-  L_applic_22:
-	MOV(R0, IMM(MEM_START + 22))
-	PUSH(R0)
-	MOV(R0, IMM(MEM_START + 20))
-	PUSH(R0)
-	MOV(R0, IMM(MEM_START + 18))
-	PUSH(R0)
-	PUSH(IMM(3))
-	MOV(R0, INDD(FREE_VAR_TAB_START, 30))
-	CMP(R0, T_UNDEFINED)
-	JUMP_EQ(EXCEPTION_UNDEFINED_VARIABLE)
-	CMP(IND(R0), IMM(T_CLOSURE))
-	JUMP_NE(EXCPETION_APPLYING_NON_PROCEDURE)
-	PUSH(INDD(R0, 1))
-	CALLA(INDD(R0, 2))
-	POP(R1)
-	POP(R1)
-	DROP(R1)
-L_lapplic_end_22:
+L_lapplic_end_12:
 
 
   PUSH(R0)

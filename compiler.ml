@@ -2144,6 +2144,10 @@ EXCEPTION_NOT_AN_INTEGER:
 printf(\"Exception: argument is not an integer\\n\");
 HALT
 
+EXCEPTION_NOT_A_STRING:
+printf(\"Exception: argument is not a string\\n\");
+HALT
+
 CONTINUE:
 PUSH(IMM(1 + " ^ string_of_int !const_tab_length ^ "))
 CALL(MALLOC) //allocate memory for constants
@@ -2400,6 +2404,19 @@ exit_setcar ^
 enter_setcdr ^
 exit_setcdr ^
 enter_stringlength ^
+"
+  CMP(FPARG(1), IMM(1))
+  JUMP_NE(EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS)
+  MOV(R1, FPARG(2))
+  CMP(IND(R1), IMM(T_STRING))
+  JUMP_NE(EXCEPTION_NOT_A_STRING)
+  MOV(R1, INDD(R1, 1))
+  PUSH(IMM(2))
+  CALL(MALLOC)
+  DROP(1)
+  MOV(INDD(R0, 0), IMM(T_INTEGER))
+  MOV(INDD(R0, 1), R1)
+L_string_length_end:" ^
 exit_stringlength ^
 enter_stringref ^
 exit_stringref ^
