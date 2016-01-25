@@ -2148,6 +2148,10 @@ EXCEPTION_NOT_A_STRING:
 printf(\"Exception: argument is not a string\\n\");
 HALT
 
+EXCEPTION_NOT_A_VECTOR:
+printf(\"Exception: argument is not a vector\\n\");
+HALT
+
 CONTINUE:
 PUSH(IMM(1 + " ^ string_of_int !const_tab_length ^ "))
 CALL(MALLOC) //allocate memory for constants
@@ -2457,6 +2461,19 @@ exit_symboltostring ^
 enter_vector ^
 exit_vector ^
 enter_vectorlength ^
+"
+  CMP(FPARG(1), IMM(1))
+  JUMP_NE(EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS)
+  MOV(R1, FPARG(2))
+  CMP(IND(R1), IMM(T_VECTOR))
+  JUMP_NE(EXCEPTION_NOT_A_VECTOR)
+  MOV(R1, INDD(R1, 1))
+  PUSH(IMM(2))
+  CALL(MALLOC)
+  DROP(1)
+  MOV(INDD(R0, 0), IMM(T_INTEGER))
+  MOV(INDD(R0, 1), R1)
+L_vector_length_end:" ^
 exit_vectorlength ^
 enter_vectorref ^
 exit_vectorref ^

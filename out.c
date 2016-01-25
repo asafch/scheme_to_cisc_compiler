@@ -6,7 +6,7 @@
 /* change to 0 for no debug info to be printed: */
 #define DO_SHOW 1
 #define MEM_START 2
-#define FREE_VAR_TAB_START (MEM_START + 11)
+#define FREE_VAR_TAB_START (MEM_START + 51)
 #define SYM_TAB_START (FREE_VAR_TAB_START + 46)
 
 #include "cisc.h"
@@ -53,15 +53,25 @@ EXCEPTION_NOT_A_STRING:
 printf("Exception: argument is not a string\n");
 HALT
 
+EXCEPTION_NOT_A_VECTOR:
+printf("Exception: argument is not a vector\n");
+HALT
+
 CONTINUE:
-PUSH(IMM(1 + 11))
+PUSH(IMM(1 + 51))
 CALL(MALLOC) //allocate memory for constants
 DROP(1)
-long consts[11] = {T_VOID, T_NIL
+long consts[51] = {T_VOID, T_NIL
 , T_BOOL, 0
 , T_BOOL, 1
-, T_STRING, 0, T_STRING, 1, 'a'};
-memcpy(M(mem) + MEM_START, consts, sizeof(long) * 11);
+, T_VECTOR, 0, T_STRING, 7, 'v', 'e', 'c', 't', 'o', 'r', '?', T_SYMBOL, MEM_START + 8
+, T_STRING, 10, 'v', 'e', 'c', 't', 'o', 'r', '-', 'r', 'e', 'f', T_SYMBOL, MEM_START + 19
+, T_VECTOR, 2, MEM_START + 17, MEM_START + 31, T_STRING, 1, 'v', T_SYMBOL, MEM_START + 37
+, T_PAIR, MEM_START + 40, MEM_START + 1
+, T_PAIR, MEM_START + 40, MEM_START + 42
+, T_PAIR, MEM_START + 40, MEM_START + 45
+};
+memcpy(M(mem) + MEM_START, consts, sizeof(long) * 51);
 
 PUSH(IMM(46))
 CALL(MALLOC) //allocate memory for all free variables in the program
@@ -117,9 +127,18 @@ long freevars[47] = {0
 memcpy(M(mem) + FREE_VAR_TAB_START, freevars + 1, sizeof(long) * 46);
 
 //sym_tab initialization
-
-
-MOV(ADDR(1), IMM(MEM_START + 1))
+long symbols[1 + 6] = {0
+ 	, MEM_START + 17, SYM_TAB_START + 2
+	, MEM_START + 31, SYM_TAB_START + 4
+	, MEM_START + 40, T_NIL
+};
+PUSH(IMM(6))
+CALL(MALLOC) //allocate memory for the symbol linked list
+DROP(1)
+//in the following memcpy, the source is symbols + 1, because symbols[0] is just a padding 0
+memcpy(M(mem) + SYM_TAB_START, symbols + 1, sizeof(long) * 6);
+//mem[1] holds the address of the first link in the symbols linked list
+MOV(ADDR(1), IMM(FREE_VAR_TAB_START + 46))
 
 
 
@@ -1113,6 +1132,18 @@ JUMP(L_exit_vector_length)
 L_vector_length:
   PUSH(FP)
   MOV(FP, SP)
+  CMP(FPARG(1), IMM(1))
+  JUMP_NE(EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS)
+  MOV(R1, FPARG(2))
+  CMP(IND(R1), IMM(T_VECTOR))
+  JUMP_NE(EXCEPTION_NOT_A_VECTOR)
+  MOV(R1, INDD(R1, 1))
+  PUSH(IMM(2))
+  CALL(MALLOC)
+  DROP(1)
+  MOV(INDD(R0, 0), IMM(T_INTEGER))
+  MOV(INDD(R0, 1), R1)
+L_vector_length_end:
 	POP(FP)
   RETURN
 L_exit_vector_length:
@@ -1240,7 +1271,7 @@ L_exit_zero:
 	MOV(R0, IMM(MEM_START + 6))
 	PUSH(R0)
 	PUSH(IMM(1))
-	MOV(R0, INDD(FREE_VAR_TAB_START, 33))
+	MOV(R0, INDD(FREE_VAR_TAB_START, 41))
 	CMP(R0, T_UNDEFINED)
 	JUMP_EQ(EXCEPTION_UNDEFINED_VARIABLE)
 	CMP(IND(R0), IMM(T_CLOSURE))
@@ -1258,10 +1289,10 @@ L_lapplic_end_10:
   DROP(1)
 
   L_applic_11:
-	MOV(R0, IMM(MEM_START + 8))
+	MOV(R0, IMM(MEM_START + 33))
 	PUSH(R0)
 	PUSH(IMM(1))
-	MOV(R0, INDD(FREE_VAR_TAB_START, 33))
+	MOV(R0, INDD(FREE_VAR_TAB_START, 41))
 	CMP(R0, T_UNDEFINED)
 	JUMP_EQ(EXCEPTION_UNDEFINED_VARIABLE)
 	CMP(IND(R0), IMM(T_CLOSURE))
@@ -1279,12 +1310,10 @@ L_lapplic_end_11:
   DROP(1)
 
   L_applic_12:
-	MOV(R0, IMM(MEM_START + 8))
+	MOV(R0, IMM(MEM_START + 48))
 	PUSH(R0)
-	MOV(R0, IMM(MEM_START + 8))
-	PUSH(R0)
-	PUSH(IMM(2))
-	MOV(R0, INDD(FREE_VAR_TAB_START, 33))
+	PUSH(IMM(1))
+	MOV(R0, INDD(FREE_VAR_TAB_START, 41))
 	CMP(R0, T_UNDEFINED)
 	JUMP_EQ(EXCEPTION_UNDEFINED_VARIABLE)
 	CMP(IND(R0), IMM(T_CLOSURE))

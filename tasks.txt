@@ -44,7 +44,7 @@ v  rational?
 v  remainder
   set-car!
   set-cdr!
-  string-length
+v  string-length
   string-ref
   string-set!
   string->symbol
@@ -52,7 +52,7 @@ v  string?
 v  symbol?
   symbol->string
   vector
-  vector-length
+v  vector-length
   vector-ref
   vector-set!
 v  vector?
