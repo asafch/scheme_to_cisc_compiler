@@ -9,7 +9,7 @@
 ;(apply cons 1 '(2))                         ; (1 . 2)
 ;(apply cons cons '(cons))                   ; (#<procedure cons> . cons)
 ;(define fact-tail
-;    (lambda (n acc)cd
+;    (lambda (n acc)
 ;      (if (= 1 n)
 ;          acc
 ;          (fact-tail (- n 1) (* n acc)))))
@@ -308,8 +308,9 @@
 ;(vector? 1 2)                               ; excpetion - wrong number of arguments
 
 ;zero?
-(zero? 0)                                   ; #t
-(zero? #f)                                  ; #f
-;(zero? (- 5 (+ 1 2 2)))                     ; #t
-(zero?)                                     ; excpetion - wrong number of arguments
+;(zero? 0)                                   ; #t
+;(zero? 0/3)                                 ; #t
+;(zero? #f)                                  ; #f
+;(zero? (- 5 (+ 1 2 2)))                    ; #t
+;(zero?)                                     ; excpetion - wrong number of arguments
 ;(zero? 0 0)                                 ; excpetion - wrong number of arguments

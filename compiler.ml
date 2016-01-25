@@ -2393,13 +2393,11 @@ enter_zero ^
   CMP(FPARG(1), IMM(1))
   JUMP_NE(EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS)
   MOV(R0, FPARG(2))
-  MOV(R12, IMM(0))
   CMP(IND(R0), IMM(T_INTEGER))
-  MOV(R12, TR)
+  JUMP_EQ(L_check_if_zero)
   CMP(IND(R0), IMM(T_FRACTION))
-  OR(R12, TR)
-  CMP(R12, IMM(0))
-  JUMP_EQ(L_not_a_zero)
+  JUMP_NE(L_not_a_zero)
+L_check_if_zero:
   CMP(INDD(R0, 1), IMM(0))
   JUMP_NE(L_not_a_zero)
 L_is_zero:
