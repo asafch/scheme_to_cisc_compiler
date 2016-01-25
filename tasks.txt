@@ -41,7 +41,7 @@ v  numerator
 v  pair?
 v  procedure?
 v  rational?
-  remainder
+v  remainder
   set-car!
   set-cdr!
   string-length

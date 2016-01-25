@@ -2140,6 +2140,10 @@ EXCEPTION_NOT_A_FRACTION:
 printf(\"Exception: argument is not a fraction\\n\");
 HALT
 
+EXCEPTION_NOT_AN_INTEGER:
+printf(\"Exception: argument is not an integer\\n\");
+HALT
+
 CONTINUE:
 PUSH(IMM(1 + " ^ string_of_int !const_tab_length ^ "))
 CALL(MALLOC) //allocate memory for constants
@@ -2372,6 +2376,24 @@ L_not_a_fraction:
 L_after_is_fraction:" ^
 exit_rational ^
 enter_remainder ^
+"
+  CMP(FPARG(1), IMM(2))
+  JUMP_NE(EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS)
+  MOV(R1, FPARG(2))
+  CMP(IND(R1), IMM(T_INTEGER))
+  JUMP_NE(EXCEPTION_NOT_AN_INTEGER)
+  MOV(R2, FPARG(3))
+  CMP(IND(R2), IMM(T_INTEGER))
+  JUMP_NE(EXCEPTION_NOT_AN_INTEGER)
+  MOV(R1, INDD(R1, 1))
+  MOV(R2, INDD(R2, 1))
+  REM(R1, R2)
+  PUSH(IMM(2))
+  CALL(MALLOC)
+  DROP(1)
+  MOV(INDD(R0, 0), IMM(T_INTEGER))
+  MOV(INDD(R0, 1), R1)
+L_remainder_end:" ^
 exit_remainder ^
 enter_setcar ^
 exit_setcar ^
