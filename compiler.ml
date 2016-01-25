@@ -2136,6 +2136,10 @@ EXCEPTION_NOT_A_PAIR:
 printf(\"Exception: argument is not a pair\\n\");
 HALT
 
+EXCEPTION_NOT_A_FRACTION:
+printf(\"Exception: argument is not a fraction\\n\");
+HALT
+
 CONTINUE:
 PUSH(IMM(1 + " ^ string_of_int !const_tab_length ^ "))
 CALL(MALLOC) //allocate memory for constants
@@ -2217,6 +2221,28 @@ exit_char ^
 enter_cons ^
 exit_cons ^
 enter_denominator ^
+"
+  CMP(FPARG(1), IMM(1))
+  JUMP_NE(EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS)
+  MOV(R1, FPARG(2))
+  CMP(IND(R1), IMM(T_FRACTION))
+  JUMP_EQ(L_is_fraction_for_denominator)
+  CMP(IND(R1), IMM(T_INTEGER))
+  JUMP_NE(EXCEPTION_NOT_A_FRACTION)
+  PUSH(IMM(2))
+  CALL(MALLOC)
+  DROP(1)
+  MOV(INDD(R0, 0), IMM(T_INTEGER))
+  MOV(INDD(R0, 1), IMM(1))
+  JUMP(L_denominator_end)
+L_is_fraction_for_denominator:
+  PUSH(IMM(2))
+  CALL(MALLOC)
+  DROP(1)
+  MOV(INDD(R0, 0), IMM(T_INTEGER))
+  MOV(R1, INDD(R1, 2))
+  MOV(INDD(R0, 1), R1)
+L_denominator_end:" ^
 exit_denominator ^
 enter_eq ^
 exit_eq ^
@@ -2277,6 +2303,29 @@ L_not_number:
 L_after_is_number:" ^
 exit_number ^
 enter_numerator ^
+"
+  CMP(FPARG(1), IMM(1))
+  JUMP_NE(EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS)
+  MOV(R1, FPARG(2))
+  CMP(IND(R1), IMM(T_FRACTION))
+  JUMP_EQ(L_is_fraction_for_numerator)
+  CMP(IND(R1), IMM(T_INTEGER))
+  JUMP_NE(EXCEPTION_NOT_A_FRACTION)
+  PUSH(IMM(2))
+  CALL(MALLOC)
+  DROP(1)
+  MOV(INDD(R0, 0), IMM(T_INTEGER))
+  MOV(R1, INDD(R1, 1))
+  MOV(INDD(R0, 1), R1)
+  JUMP(L_numerator_end)
+L_is_fraction_for_numerator:
+  PUSH(IMM(2))
+  CALL(MALLOC)
+  DROP(1)
+  MOV(INDD(R0, 0), IMM(T_INTEGER))
+  MOV(R1, INDD(R1, 1))
+  MOV(INDD(R0, 1), R1)
+L_numerator_end:" ^
 exit_numerator ^
 enter_pair ^
   "

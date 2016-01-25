@@ -6,7 +6,7 @@
 /* change to 0 for no debug info to be printed: */
 #define DO_SHOW 1
 #define MEM_START 2
-#define FREE_VAR_TAB_START (MEM_START + 8)
+#define FREE_VAR_TAB_START (MEM_START + 19)
 #define SYM_TAB_START (FREE_VAR_TAB_START + 46)
 
 #include "cisc.h"
@@ -41,16 +41,24 @@ EXCEPTION_NOT_A_PAIR:
 printf("Exception: argument is not a pair\n");
 HALT
 
+EXCEPTION_NOT_A_FRACTION:
+printf("Exception: argument is not a fraction\n");
+HALT
+
 CONTINUE:
-PUSH(IMM(1 + 8))
+PUSH(IMM(1 + 19))
 CALL(MALLOC) //allocate memory for constants
 DROP(1)
-long consts[8] = {T_VOID, T_NIL
+long consts[19] = {T_VOID, T_NIL
 , T_BOOL, 0
 , T_BOOL, 1
-, T_INTEGER, 0
+, T_INTEGER, 2
+, T_FRACTION, -7, 17
+, T_INTEGER, 3
+, T_FRACTION, 1, 2
+, T_FRACTION, 1, 3
 };
-memcpy(M(mem) + MEM_START, consts, sizeof(long) * 8);
+memcpy(M(mem) + MEM_START, consts, sizeof(long) * 19);
 
 PUSH(IMM(46))
 CALL(MALLOC) //allocate memory for all free variables in the program
@@ -444,6 +452,27 @@ JUMP(L_exit_denominator)
 L_denominator:
   PUSH(FP)
   MOV(FP, SP)
+  CMP(FPARG(1), IMM(1))
+  JUMP_NE(EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS)
+  MOV(R1, FPARG(2))
+  CMP(IND(R1), IMM(T_FRACTION))
+  JUMP_EQ(L_is_fraction_for_denominator)
+  CMP(IND(R1), IMM(T_INTEGER))
+  JUMP_NE(EXCEPTION_NOT_A_FRACTION)
+  PUSH(IMM(2))
+  CALL(MALLOC)
+  DROP(1)
+  MOV(INDD(R0, 0), IMM(T_INTEGER))
+  MOV(INDD(R0, 1), IMM(1))
+  JUMP(L_denominator_end)
+L_is_fraction_for_denominator:
+  PUSH(IMM(2))
+  CALL(MALLOC)
+  DROP(1)
+  MOV(INDD(R0, 0), IMM(T_INTEGER))
+  MOV(R1, INDD(R1, 2))
+  MOV(INDD(R0, 1), R1)
+L_denominator_end:
 	POP(FP)
   RETURN
 L_exit_denominator:
@@ -688,6 +717,28 @@ JUMP(L_exit_numerator)
 L_numerator:
   PUSH(FP)
   MOV(FP, SP)
+  CMP(FPARG(1), IMM(1))
+  JUMP_NE(EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS)
+  MOV(R1, FPARG(2))
+  CMP(IND(R1), IMM(T_FRACTION))
+  JUMP_EQ(L_is_fraction_for_numerator)
+  CMP(IND(R1), IMM(T_INTEGER))
+  JUMP_NE(EXCEPTION_NOT_A_FRACTION)
+  PUSH(IMM(2))
+  CALL(MALLOC)
+  DROP(1)
+  MOV(INDD(R0, 0), IMM(T_INTEGER))
+  MOV(R1, INDD(R1, 1))
+  MOV(INDD(R0, 1), R1)
+  JUMP(L_numerator_end)
+L_is_fraction_for_numerator:
+  PUSH(IMM(2))
+  CALL(MALLOC)
+  DROP(1)
+  MOV(INDD(R0, 0), IMM(T_INTEGER))
+  MOV(R1, INDD(R1, 1))
+  MOV(INDD(R0, 1), R1)
+L_numerator_end:
 	POP(FP)
   RETURN
 L_exit_numerator:
@@ -1153,13 +1204,11 @@ L_exit_zero:
 
 
 
-  L_applic_8:
+  L_applic_12:
 	MOV(R0, IMM(MEM_START + 6))
 	PUSH(R0)
-	MOV(R0, IMM(MEM_START + 6))
-	PUSH(R0)
-	PUSH(IMM(2))
-	MOV(R0, INDD(FREE_VAR_TAB_START, 45))
+	PUSH(IMM(1))
+	MOV(R0, INDD(FREE_VAR_TAB_START, 26))
 	CMP(R0, T_UNDEFINED)
 	JUMP_EQ(EXCEPTION_UNDEFINED_VARIABLE)
 	CMP(IND(R0), IMM(T_CLOSURE))
@@ -1169,7 +1218,72 @@ L_exit_zero:
 	POP(R1)
 	POP(R1)
 	DROP(R1)
-L_lapplic_end_8:
+L_lapplic_end_12:
+
+
+  PUSH(R0)
+  CALL(WRITE_SOB_IF_NOT_VOID)
+  DROP(1)
+
+  L_applic_13:
+	MOV(R0, IMM(MEM_START + 8))
+	PUSH(R0)
+	PUSH(IMM(1))
+	MOV(R0, INDD(FREE_VAR_TAB_START, 26))
+	CMP(R0, T_UNDEFINED)
+	JUMP_EQ(EXCEPTION_UNDEFINED_VARIABLE)
+	CMP(IND(R0), IMM(T_CLOSURE))
+	JUMP_NE(EXCPETION_APPLYING_NON_PROCEDURE)
+	PUSH(INDD(R0, 1))
+	CALLA(INDD(R0, 2))
+	POP(R1)
+	POP(R1)
+	DROP(R1)
+L_lapplic_end_13:
+
+
+  PUSH(R0)
+  CALL(WRITE_SOB_IF_NOT_VOID)
+  DROP(1)
+
+  L_applic_14:
+	MOV(R0, IMM(MEM_START + 11))
+	PUSH(R0)
+	PUSH(IMM(1))
+	MOV(R0, INDD(FREE_VAR_TAB_START, 26))
+	CMP(R0, T_UNDEFINED)
+	JUMP_EQ(EXCEPTION_UNDEFINED_VARIABLE)
+	CMP(IND(R0), IMM(T_CLOSURE))
+	JUMP_NE(EXCPETION_APPLYING_NON_PROCEDURE)
+	PUSH(INDD(R0, 1))
+	CALLA(INDD(R0, 2))
+	POP(R1)
+	POP(R1)
+	DROP(R1)
+L_lapplic_end_14:
+
+
+  PUSH(R0)
+  CALL(WRITE_SOB_IF_NOT_VOID)
+  DROP(1)
+
+  L_applic_15:
+	MOV(R0, IMM(MEM_START + 16))
+	PUSH(R0)
+	MOV(R0, IMM(MEM_START + 13))
+	PUSH(R0)
+	PUSH(IMM(2))
+	MOV(R0, INDD(FREE_VAR_TAB_START, 26))
+	CMP(R0, T_UNDEFINED)
+	JUMP_EQ(EXCEPTION_UNDEFINED_VARIABLE)
+	CMP(IND(R0), IMM(T_CLOSURE))
+	JUMP_NE(EXCPETION_APPLYING_NON_PROCEDURE)
+	PUSH(INDD(R0, 1))
+	CALLA(INDD(R0, 2))
+	POP(R1)
+	POP(R1)
+	DROP(R1)
+L_lapplic_end_15:
 
 
   PUSH(R0)
