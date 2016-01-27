@@ -108,10 +108,25 @@
 ;(denominator #\t)                           ; exception - #\t is not a rational number
 
 ;eq?
+;(eq? (if #f #f) (if #f #f))                 ; #t
+;(eq? '() '())                               ; #t
+;(eq? #f #f)                                 ; #t
+;(eq? #f #t)                                 ; #f
+;(eq? #\a #\A)                               ; #f
+;(eq? #\newline #\newline)                   ; #t
+;(eq? -1 -1)                                 ; #t
+;(eq? -1 2)                                  ; #f
+;(eq? 1/3 2/6)                               ; #t
+;(eq? 1/3 1/4)                               ; #f
 ;(eq? "ab" "ab")                             ; #t (because of constants table)
 ;(eq? 'ab 'ab)                               ; #t
-;(eq? #f #f)                                 ; #t
-;(eq? -1 -1)                                 ; #t
+;(eq? 'e 'q)                                 ; #f
+;(eq? '(1 2) '(1 2))                         ; #t
+;(eq? '(1 2) '(1))                           ; #f
+;(eq? '#(vector) '#(vector))                 ; #t
+;(eq? '#(vector) '#(list))                   ; #f
+;(eq?)                                       ; excpetion - wrong number of arguments
+;(eq? 1 2 3)                                 ; excpetion - wrong number of arguments
 
 ;integer?
 ;(integer? -10000000)                        ; #t

@@ -2257,6 +2257,98 @@ L_is_fraction_for_denominator:
 L_denominator_end:" ^
 exit_denominator ^
 enter_eq ^
+  "
+  CMP(FPARG(1), IMM(2))
+  JUMP_NE(EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS)
+  MOV(R1, FPARG(2))
+  MOV(R2, FPARG(3))
+  MOV(R3, IND(R1))
+  MOV(R4, IND(R2))
+  CMP(R3, R4)            // compare type tags
+  JUMP_NE(L_eq_false)
+  CMP(R4, IMM(T_VOID))
+  JUMP_EQ(L_eq_true)
+  CMP(R4, IMM(T_NIL))
+  JUMP_EQ(L_eq_true)
+  CMP(R4, IMM(T_BOOL))
+  JUMP_EQ(L_eq_bool)
+  CMP(R4, IMM(T_CHAR))
+  JUMP_EQ(L_eq_char)
+  CMP(R4, IMM(T_INTEGER))
+  JUMP_EQ(L_eq_integer)
+  CMP(R4, IMM(T_FRACTION))
+  JUMP_EQ(L_eq_fraction)
+  CMP(R4, IMM(T_STRING))
+  JUMP_EQ(L_eq_string)
+  CMP(R4, IMM(T_SYMBOL))
+  JUMP_EQ(L_eq_symbol)
+  CMP(R4, IMM(T_PAIR))
+  JUMP_EQ(L_eq_pair)
+  CMP(R4, IMM(T_VECTOR))
+  JUMP_EQ(L_eq_vector)
+L_eq_bool:
+  MOV(R3, INDD(R1, 1))
+  MOV(R4, INDD(R2, 1))
+  CMP(R3, R4)
+  JUMP_NE(L_eq_false)
+  JUMP(L_eq_true)
+L_eq_char:
+  MOV(R3, INDD(R1, 1))
+  MOV(R4, INDD(R2, 1))
+  CMP(R3, R4)
+  JUMP_NE(L_eq_false)
+  JUMP(L_eq_true)
+L_eq_integer:
+  MOV(R3, INDD(R1, 1))
+  MOV(R4, INDD(R2, 1))
+  CMP(R3, R4)
+  JUMP_NE(L_eq_false)
+  JUMP(L_eq_true)
+L_eq_fraction:
+  MOV(R3, INDD(R1, 1))
+  MOV(R4, INDD(R2, 1))
+  CMP(R3, R4)
+  JUMP_NE(L_eq_false)
+  MOV(R3, INDD(R1, 2))
+  MOV(R4, INDD(R2, 2))
+  CMP(R3, R4)
+  JUMP_NE(L_eq_false)
+  JUMP(L_eq_true)
+L_eq_string:
+  CMP(R1, R2)
+  JUMP_NE(L_eq_false)
+  JUMP(L_eq_true)
+L_eq_symbol:
+  MOV(R3, INDD(R1, 1))
+  MOV(R4, INDD(R2, 1))
+  CMP(R3, R4)
+  JUMP_NE(L_eq_false)
+  JUMP(L_eq_true)
+L_eq_pair:
+  CMP(R1, R2)
+  JUMP_NE(L_eq_false)
+  JUMP(L_eq_true)
+L_eq_vector:
+  CMP(R1, R2)
+  JUMP_NE(L_eq_false)
+  JUMP(L_eq_true)
+L_eq_closure:
+  MOV(R3, INDD(R1, 1))
+  MOV(R4, INDD(R2, 1))
+  CMP(R3, R4)
+  JUMP_NE(L_eq_false)
+  MOV(R3, INDD(R1, 2))
+  MOV(R4, INDD(R2, 2))
+  CMP(R3, R4)
+  JUMP_NE(L_eq_false)
+  JUMP(L_eq_true)
+L_eq_true:
+  MOV(R0, IMM(MEM_START + " ^ string_of_int (const_lookup (Bool true) !const_table) ^ "))
+  JUMP(L_eq_end)
+L_eq_false:
+  MOV(R0, IMM(MEM_START + " ^ string_of_int (const_lookup (Bool false) !const_table) ^ "))
+L_eq_end:
+  " ^
 exit_eq ^
 enter_integer ^
 "
