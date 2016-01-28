@@ -27,7 +27,7 @@ v  cdr
 v  char?
   cons
 v  denominator
-  eq?
+v  eq?
 v  integer?
   integer->char
   list (variadic)
@@ -51,7 +51,7 @@ v  string-length
 v  string?
 v  symbol?
   symbol->string
-  vector
+v  vector
 v  vector-length
   vector-ref
   vector-set!
