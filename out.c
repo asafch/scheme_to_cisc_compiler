@@ -6,7 +6,7 @@
 /* change to 0 for no debug info to be printed: */
 #define DO_SHOW 1
 #define MEM_START 2
-#define FREE_VAR_TAB_START (MEM_START + 26)
+#define FREE_VAR_TAB_START (MEM_START + 51)
 #define SYM_TAB_START (FREE_VAR_TAB_START + 46)
 
 #include "cisc.h"
@@ -58,17 +58,20 @@ printf("Exception: argument is not a vector\n");
 HALT
 
 CONTINUE:
-PUSH(IMM(1 + 26))
+PUSH(IMM(1 + 51))
 CALL(MALLOC) //allocate memory for constants
 DROP(1)
-long consts[26] = {T_VOID, T_NIL
+long consts[51] = {T_VOID, T_NIL
 , T_BOOL, 0
 , T_BOOL, 1
-, T_STRING, 1, 'a', T_SYMBOL, MEM_START + 6
-, T_INTEGER, 1
-, T_STRING, 3, 'u', 'n', 'o', T_STRING, 4, 'e', 'i', 'n', 'z', T_SYMBOL, MEM_START + 18
+, T_VECTOR, 0, T_STRING, 7, 'v', 'e', 'c', 't', 'o', 'r', '?', T_SYMBOL, MEM_START + 8
+, T_STRING, 10, 'v', 'e', 'c', 't', 'o', 'r', '-', 'r', 'e', 'f', T_SYMBOL, MEM_START + 19
+, T_VECTOR, 2, MEM_START + 17, MEM_START + 31, T_STRING, 1, 'v', T_SYMBOL, MEM_START + 37
+, T_PAIR, MEM_START + 40, MEM_START + 1
+, T_PAIR, MEM_START + 40, MEM_START + 42
+, T_PAIR, MEM_START + 40, MEM_START + 45
 };
-memcpy(M(mem) + MEM_START, consts, sizeof(long) * 26);
+memcpy(M(mem) + MEM_START, consts, sizeof(long) * 51);
 
 PUSH(IMM(46))
 CALL(MALLOC) //allocate memory for all free variables in the program
@@ -124,15 +127,16 @@ long freevars[47] = {0
 memcpy(M(mem) + FREE_VAR_TAB_START, freevars + 1, sizeof(long) * 46);
 
 //sym_tab initialization
-long symbols[1 + 4] = {0
- 	, MEM_START + 9, SYM_TAB_START + 2
-	, MEM_START + 24, T_NIL
+long symbols[1 + 6] = {0
+ 	, MEM_START + 17, SYM_TAB_START + 2
+	, MEM_START + 31, SYM_TAB_START + 4
+	, MEM_START + 40, T_NIL
 };
-PUSH(IMM(4))
+PUSH(IMM(6))
 CALL(MALLOC) //allocate memory for the symbol linked list
 DROP(1)
 //in the following memcpy, the source is symbols + 1, because symbols[0] is just a padding 0
-memcpy(M(mem) + SYM_TAB_START, symbols + 1, sizeof(long) * 4);
+memcpy(M(mem) + SYM_TAB_START, symbols + 1, sizeof(long) * 6);
 //mem[1] holds the address of the first link in the symbols linked list
 MOV(ADDR(1), IMM(FREE_VAR_TAB_START + 46))
 
@@ -600,7 +604,7 @@ L_eq_true:
 L_eq_false:
   MOV(R0, IMM(MEM_START + 2))
 L_eq_end:
-
+  
 	POP(FP)
   RETURN
 L_exit_eq:
@@ -1374,17 +1378,11 @@ L_exit_zero:
 
 
 
-  L_applic_1:
-	MOV(R0, INDD(FREE_VAR_TAB_START, 40))
-	CMP(R0, T_UNDEFINED)
-	JUMP_EQ(EXCEPTION_UNDEFINED_VARIABLE)
+  L_applic_13:
+	MOV(R0, IMM(MEM_START + 6))
 	PUSH(R0)
-	MOV(R0, INDD(FREE_VAR_TAB_START, 40))
-	CMP(R0, T_UNDEFINED)
-	JUMP_EQ(EXCEPTION_UNDEFINED_VARIABLE)
-	PUSH(R0)
-	PUSH(IMM(2))
-	MOV(R0, INDD(FREE_VAR_TAB_START, 40))
+	PUSH(IMM(1))
+	MOV(R0, INDD(FREE_VAR_TAB_START, 41))
 	CMP(R0, T_UNDEFINED)
 	JUMP_EQ(EXCEPTION_UNDEFINED_VARIABLE)
 	CMP(IND(R0), IMM(T_CLOSURE))
@@ -1394,26 +1392,18 @@ L_exit_zero:
 	POP(R1)
 	POP(R1)
 	DROP(R1)
-L_lapplic_end_1:
+L_lapplic_end_13:
 
 
   PUSH(R0)
   CALL(WRITE_SOB_IF_NOT_VOID)
   DROP(1)
 
-  L_applic_2:
-	MOV(R0, IMM(MEM_START + 24))
+  L_applic_14:
+	MOV(R0, IMM(MEM_START + 33))
 	PUSH(R0)
-	MOV(R0, IMM(MEM_START + 13))
-	PUSH(R0)
-	MOV(R0, IMM(MEM_START + 11))
-	PUSH(R0)
-	MOV(R0, IMM(MEM_START + 11))
-	PUSH(R0)
-	MOV(R0, IMM(MEM_START + 9))
-	PUSH(R0)
-	PUSH(IMM(5))
-	MOV(R0, INDD(FREE_VAR_TAB_START, 40))
+	PUSH(IMM(1))
+	MOV(R0, INDD(FREE_VAR_TAB_START, 41))
 	CMP(R0, T_UNDEFINED)
 	JUMP_EQ(EXCEPTION_UNDEFINED_VARIABLE)
 	CMP(IND(R0), IMM(T_CLOSURE))
@@ -1423,16 +1413,18 @@ L_lapplic_end_1:
 	POP(R1)
 	POP(R1)
 	DROP(R1)
-L_lapplic_end_2:
-BP
+L_lapplic_end_14:
+
 
   PUSH(R0)
   CALL(WRITE_SOB_IF_NOT_VOID)
   DROP(1)
 
-  L_applic_3:
-	PUSH(IMM(0))
-	MOV(R0, INDD(FREE_VAR_TAB_START, 40))
+  L_applic_15:
+	MOV(R0, IMM(MEM_START + 48))
+	PUSH(R0)
+	PUSH(IMM(1))
+	MOV(R0, INDD(FREE_VAR_TAB_START, 41))
 	CMP(R0, T_UNDEFINED)
 	JUMP_EQ(EXCEPTION_UNDEFINED_VARIABLE)
 	CMP(IND(R0), IMM(T_CLOSURE))
@@ -1442,14 +1434,14 @@ BP
 	POP(R1)
 	POP(R1)
 	DROP(R1)
-L_lapplic_end_3:
+L_lapplic_end_15:
 
 
   PUSH(R0)
   CALL(WRITE_SOB_IF_NOT_VOID)
   DROP(1)
 
-
+  
   STOP_MACHINE
 
   return 0;

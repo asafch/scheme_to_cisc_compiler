@@ -2588,6 +2588,19 @@ enter_vectorlength ^
   MOV(INDD(R0, 1), R1)
 L_vector_length_end:" ^
 exit_vectorlength ^
+"
+  CMP(FPARG(1), IMM(1))
+  JUMP_NE(EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS)
+  MOV(R1, FPARG(2))
+  CMP(IND(R1), IMM(T_VECTOR))
+  JUMP_NE(EXCEPTION_NOT_A_VECTOR)
+  PUSH(IMM(2))
+  CALL(MALLOC)
+  DROP(1)
+  MOV(INDD(R0, 0), IMM(T_INTEGER))
+  MOV(R1, INDD(R1, 1))
+  MOV(INDD(R0, 1), R1)
+" ^
 enter_vectorref ^
 exit_vectorref ^
 enter_vectorset ^
