@@ -2551,6 +2551,27 @@ exit_symbol ^
 enter_symboltostring ^
 exit_symboltostring ^
 enter_vector ^
+"
+  MOV(R1, FPARG(1))
+  MOV(R2, FPARG(1))         //number of args, number of iterations in the loop
+  ADD(R1, IMM(2))
+  PUSH(R1)
+  CALL(MALLOC)
+  DROP(1)
+  MOV(INDD(R0, 0), IMM(T_VECTOR))
+  MOV(INDD(R0, 1), R2)
+  MOV(R3, IMM(0))          //arg number
+  MOV(R4, IMM(2))          //FPARG displacement
+L_insert_to_vector:
+  CMP(R3, R2)              //loop entry condition
+  JUMP_EQ(L_insertion_end)
+  MOV(R5, FPARG(R4))       //temp
+  MOV(INDD(R0, R4), R5)
+  INCR(R3)
+  INCR(R4)
+  JUMP(L_insert_to_vector)
+L_insertion_end:
+L_vector_end:" ^
 exit_vector ^
 enter_vectorlength ^
 "
