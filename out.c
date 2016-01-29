@@ -72,8 +72,8 @@ DROP(1)
 long consts[10] = {T_VOID, T_NIL
 , T_BOOL, 0
 , T_BOOL, 1
-, T_CHAR, 65
-, T_CHAR, 12
+, T_INTEGER, 10
+, T_INTEGER, 255
 };
 memcpy(M(mem) + MEM_START, consts, sizeof(long) * 10);
 
@@ -653,6 +653,18 @@ JUMP(L_exit_integertochar)
 L_integertochar:
   PUSH(FP)
   MOV(FP, SP)
+  CMP(FPARG(1), IMM(1))
+  JUMP_NE(EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS)
+  MOV(R1, FPARG(2))
+  CMP(INDD(R1, 0), IMM(T_INTEGER))
+  JUMP_NE(EXCEPTION_NOT_AN_INTEGER)
+  MOV(R1, INDD(R1, 1))
+  PUSH(IMM(2))
+  CALL(MALLOC)
+  DROP(1)
+  MOV(INDD(R0, 0), IMM(T_CHAR))
+  MOV(INDD(R0, 1), R1)
+
 	POP(FP)
   RETURN
 L_exit_integertochar:
@@ -1418,7 +1430,7 @@ L_exit_zero:
 
 
 
-  L_simple_env_expansion_4:
+  L_simple_env_expansion_7:
 	PUSH(IMM(1))
 	CALL(MALLOC)
 	MOV(R1, R0)
@@ -1426,15 +1438,15 @@ L_exit_zero:
 	MOV(R2, FPARG(0))
 	MOV(R3, IMM(0))
 	MOV(R4, IMM(1))
-L_simple_env_expand_4:
+L_simple_env_expand_7:
 	CMP(R3, 0)
-	JUMP_EQ(L_simple_env_expand_end_4)
+	JUMP_EQ(L_simple_env_expand_end_7)
 	MOV(R5, INDD(R2, R3))
 	MOV(INDD(R1, R4), R5)
 	INCR(R3)
 	INCR(R4)
-	JUMP(L_simple_env_expand_4)
-L_simple_env_expand_end_4:
+	JUMP(L_simple_env_expand_7)
+L_simple_env_expand_end_7:
 	PUSH(FPARG(1))
 	CALL(MALLOC)
 	MOV(R3, R0)
@@ -1442,32 +1454,32 @@ L_simple_env_expand_end_4:
 	MOV(R4, IMM(2))
 	MOV(R5, FPARG(1))
 	ADD(R5, IMM(2))
-L_simple_param_copy_4:
+L_simple_param_copy_7:
 	CMP(R4, R5)
-	JUMP_EQ(L_simple_param_copy_end_4)
+	JUMP_EQ(L_simple_param_copy_end_7)
 	MOV(R9, R4)
 	SUB(R9, IMM(2))
 	MOV(R6, FPARG(R4))
 	MOV(INDD(R3, R9), R6)
 	INCR(R4)
-	JUMP(L_simple_param_copy_4)
-L_simple_param_copy_end_4:
+	JUMP(L_simple_param_copy_7)
+L_simple_param_copy_end_7:
 	MOV(INDD(R1, 0), R3)
 	PUSH(IMM(3))
 	CALL(MALLOC)
 	DROP(1)
 	MOV(INDD(R0, 0), IMM(T_CLOSURE))
 	MOV(INDD(R0, 1), R1)
-	MOV(INDD(R0, 2), LABEL(L_lambda_simple_4))
-	JUMP(L_lambda_simple_end_4)
-L_lambda_simple_4:
+	MOV(INDD(R0, 2), LABEL(L_lambda_simple_7))
+	JUMP(L_lambda_simple_end_7)
+L_lambda_simple_7:
 	PUSH(FP)
 	MOV(FP, SP)
 	MOV(R15, FPARG(1))
 	CMP(R15, IMM(2))
 	JUMP_NE(EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS)
-L_if_else_4:
-L_applic_18:
+L_if_else_7:
+L_applic_32:
 MOV(R0, FPARG(0 + 2))
 	PUSH(R0)
 	PUSH(IMM(1))
@@ -1481,17 +1493,17 @@ MOV(R0, FPARG(0 + 2))
 	POP(R1)
 	POP(R1)
 	DROP(R1)
-L_lapplic_end_18:
+L_lapplic_end_32:
 	CMP(R0, IMM(MEM_START + 2))
-	JUMP_EQ(L_else_4)
+	JUMP_EQ(L_else_7)
 MOV(R0, FPARG(1 + 2))
-	JUMP(L_if_end_4)
-L_else_4: 
-L_applic_tp_3:
-L_applic_16:
+	JUMP(L_if_end_7)
+L_else_7: 
+L_applic_tp_5:
+L_applic_30:
 MOV(R0, FPARG(1 + 2))
 	PUSH(R0)
-L_applic_17:
+L_applic_31:
 MOV(R0, FPARG(0 + 2))
 	PUSH(R0)
 	PUSH(IMM(1))
@@ -1505,7 +1517,7 @@ MOV(R0, FPARG(0 + 2))
 	POP(R1)
 	POP(R1)
 	DROP(R1)
-L_lapplic_end_17:
+L_lapplic_end_31:
 	PUSH(R0)
 	PUSH(IMM(2))
 	MOV(R0, INDD(FREE_VAR_TAB_START, 0))
@@ -1518,9 +1530,9 @@ L_lapplic_end_17:
 	POP(R1)
 	POP(R1)
 	DROP(R1)
-L_lapplic_end_16:
+L_lapplic_end_30:
 	PUSH(R0)
-L_applic_15:
+L_applic_29:
 MOV(R0, FPARG(0 + 2))
 	PUSH(R0)
 	PUSH(IMM(1))
@@ -1534,7 +1546,7 @@ MOV(R0, FPARG(0 + 2))
 	POP(R1)
 	POP(R1)
 	DROP(R1)
-L_lapplic_end_15:
+L_lapplic_end_29:
 	PUSH(R0)
 	PUSH(IMM(2))
 	MOV(R0, INDD(FREE_VAR_TAB_START, 14))
@@ -1556,26 +1568,26 @@ L_lapplic_end_15:
 	ADD(R14, FPARG(1))
 	ADD(R14, IMM(1))
 	MOV(SP, R4)
-L_applic_tp_drop_frame_3:
+L_applic_tp_drop_frame_5:
 	CMP(R5, R6)
-	JUMP_EQ(L_applic_tp_drop_frame_end_3)
+	JUMP_EQ(L_applic_tp_drop_frame_end_5)
 	MOV(R7, STACK(R3))
 	PUSH(R7)
 	INCR(R3)
 	INCR(R5)
-	JUMP(L_applic_tp_drop_frame_3)
-L_applic_tp_drop_frame_end_3:
+	JUMP(L_applic_tp_drop_frame_5)
+L_applic_tp_drop_frame_end_5:
 	PUSH(R2)
 	MOV(FP, R1)
 	JUMPA(INDD(R0, 2))
 	POP(R1)
 	POP(R1)
 	DROP(R1)
-L_applic_tp_end_3:
-L_if_end_4:
+L_applic_tp_end_5:
+L_if_end_7:
 	POP(FP)
 	RETURN
-L_lambda_simple_end_4:
+L_lambda_simple_end_7:
 	MOV(IND(FREE_VAR_TAB_START + 0), R0)
 	MOV(R0, IMM(MEM_START))
 
@@ -1584,7 +1596,7 @@ L_lambda_simple_end_4:
   CALL(WRITE_SOB_IF_NOT_VOID)
   DROP(1)
 
-  L_simple_env_expansion_5:
+  L_simple_env_expansion_8:
 	PUSH(IMM(1))
 	CALL(MALLOC)
 	MOV(R1, R0)
@@ -1592,15 +1604,15 @@ L_lambda_simple_end_4:
 	MOV(R2, FPARG(0))
 	MOV(R3, IMM(0))
 	MOV(R4, IMM(1))
-L_simple_env_expand_5:
+L_simple_env_expand_8:
 	CMP(R3, 0)
-	JUMP_EQ(L_simple_env_expand_end_5)
+	JUMP_EQ(L_simple_env_expand_end_8)
 	MOV(R5, INDD(R2, R3))
 	MOV(INDD(R1, R4), R5)
 	INCR(R3)
 	INCR(R4)
-	JUMP(L_simple_env_expand_5)
-L_simple_env_expand_end_5:
+	JUMP(L_simple_env_expand_8)
+L_simple_env_expand_end_8:
 	PUSH(FPARG(1))
 	CALL(MALLOC)
 	MOV(R3, R0)
@@ -1608,32 +1620,32 @@ L_simple_env_expand_end_5:
 	MOV(R4, IMM(2))
 	MOV(R5, FPARG(1))
 	ADD(R5, IMM(2))
-L_simple_param_copy_5:
+L_simple_param_copy_8:
 	CMP(R4, R5)
-	JUMP_EQ(L_simple_param_copy_end_5)
+	JUMP_EQ(L_simple_param_copy_end_8)
 	MOV(R9, R4)
 	SUB(R9, IMM(2))
 	MOV(R6, FPARG(R4))
 	MOV(INDD(R3, R9), R6)
 	INCR(R4)
-	JUMP(L_simple_param_copy_5)
-L_simple_param_copy_end_5:
+	JUMP(L_simple_param_copy_8)
+L_simple_param_copy_end_8:
 	MOV(INDD(R1, 0), R3)
 	PUSH(IMM(3))
 	CALL(MALLOC)
 	DROP(1)
 	MOV(INDD(R0, 0), IMM(T_CLOSURE))
 	MOV(INDD(R0, 1), R1)
-	MOV(INDD(R0, 2), LABEL(L_lambda_simple_5))
-	JUMP(L_lambda_simple_end_5)
-L_lambda_simple_5:
+	MOV(INDD(R0, 2), LABEL(L_lambda_simple_8))
+	JUMP(L_lambda_simple_end_8)
+L_lambda_simple_8:
 	PUSH(FP)
 	MOV(FP, SP)
 	MOV(R15, FPARG(1))
 	CMP(R15, IMM(1))
 	JUMP_NE(EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS)
-L_if_else_5:
-L_applic_19:
+L_if_else_8:
+L_applic_33:
 	MOV(R0, IMM(MEM_START + 2))
 	PUSH(R0)
 MOV(R0, FPARG(0 + 2))
@@ -1649,17 +1661,17 @@ MOV(R0, FPARG(0 + 2))
 	POP(R1)
 	POP(R1)
 	DROP(R1)
-L_lapplic_end_19:
+L_lapplic_end_33:
 	CMP(R0, IMM(MEM_START + 2))
-	JUMP_EQ(L_else_5)
+	JUMP_EQ(L_else_8)
 	MOV(R0, IMM(MEM_START + 4))
-	JUMP(L_if_end_5)
-L_else_5: 
+	JUMP(L_if_end_8)
+L_else_8: 
 	MOV(R0, IMM(MEM_START + 2))
-L_if_end_5:
+L_if_end_8:
 	POP(FP)
 	RETURN
-L_lambda_simple_end_5:
+L_lambda_simple_end_8:
 	MOV(IND(FREE_VAR_TAB_START + 23), R0)
 	MOV(R0, IMM(MEM_START))
 
@@ -1668,7 +1680,7 @@ L_lambda_simple_end_5:
   CALL(WRITE_SOB_IF_NOT_VOID)
   DROP(1)
 
-  L_opt_env_expansion_2:
+  L_opt_env_expansion_3:
 	PUSH(IMM(1))
 	CALL(MALLOC)
 	MOV(R1, R0)
@@ -1676,15 +1688,15 @@ L_lambda_simple_end_5:
 	MOV(R2, FPARG(0))
 	MOV(R3, IMM(0))
 	MOV(R4, IMM(1))
-L_opt_env_expand_2:
+L_opt_env_expand_3:
 	CMP(R3, 0)
-	JUMP_EQ(L_opt_env_expand_end_2)
+	JUMP_EQ(L_opt_env_expand_end_3)
 	MOV(R5, INDD(R2, R3))
 	MOV(INDD(R1, R4), R5)
 	INCR(R3)
 	INCR(R4)
-	JUMP(L_opt_env_expand_2)
-L_opt_env_expand_end_2:
+	JUMP(L_opt_env_expand_3)
+L_opt_env_expand_end_3:
 	PUSH(FPARG(1))
 	CALL(MALLOC)
 	MOV(R3, R0)
@@ -1692,28 +1704,28 @@ L_opt_env_expand_end_2:
 	MOV(R4, IMM(2))
 	MOV(R5, FPARG(1))
 	ADD(R5, IMM(2))
-L_opt_param_copy_2:
+L_opt_param_copy_3:
 	CMP(R4, R5)
-	JUMP_EQ(L_opt_param_copy_end_2)
+	JUMP_EQ(L_opt_param_copy_end_3)
 	MOV(R9, R4)
 	SUB(R9, IMM(2))
 	MOV(R6, FPARG(R4))
 	MOV(INDD(R3, R9), R6)
 	INCR(R4)
-	JUMP(L_opt_param_copy_2)
-L_opt_param_copy_end_2:
+	JUMP(L_opt_param_copy_3)
+L_opt_param_copy_end_3:
 	MOV(INDD(R1, 0), R3)
 	PUSH(IMM(3))
 	CALL(MALLOC)
 	DROP(1)
 	MOV(INDD(R0, 0), IMM(T_CLOSURE))
 	MOV(INDD(R0, 1), R1)
-	MOV(INDD(R0, 2), LABEL(L_lambda_opt_2))
-	JUMP(L_lambda_opt_end_2)
-L_lambda_opt_2:
+	MOV(INDD(R0, 2), LABEL(L_lambda_opt_3))
+	JUMP(L_lambda_opt_end_3)
+L_lambda_opt_3:
 	MOV(R10, STARG(1))
 	CMP(R10, IMM(0))
-	JUMP_GT(L_opt_after_push_nil_2)
+	JUMP_GT(L_opt_after_push_nil_3)
 	JUMP_LT(EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS)
 	MOV(R1, SP)
 	MOV(R2, R1)
@@ -1733,31 +1745,31 @@ L_lambda_opt_2:
 	DECR(R1)
 	DECR(R2)
 	MOV(R5, IMM(0))
-L_opt_push_nil_2:
+L_opt_push_nil_3:
 	CMP(R5, R4)
-	JUMP_EQ(L_opt_push_nil_end_2)
+	JUMP_EQ(L_opt_push_nil_end_3)
 	MOV(R13, IMM(1))
 	MOV(R3, STACK(R2))
 	MOV(STACK(R1), R3)
 	DECR(R1)
 	DECR(R2)
 	INCR(R5)
-	JUMP(L_opt_push_nil_2)
-L_opt_push_nil_end_2:
+	JUMP(L_opt_push_nil_3)
+L_opt_push_nil_end_3:
 	CMP(R4, IMM(0))
-	JUMP_NE(L_lambda_opt_not_variadic_2)
+	JUMP_NE(L_lambda_opt_not_variadic_3)
 	MOV(R13, IMM(1))
-L_lambda_opt_not_variadic_2:
+L_lambda_opt_not_variadic_3:
 	MOV(STACK(R1), IMM(MEM_START + 1))
 	INCR(SP)
 	CMP(R13, IMM(1))
-	JUMP_EQ(L_lambda_opt_no_frame_drop_2)
-L_opt_after_push_nil_2:
+	JUMP_EQ(L_lambda_opt_no_frame_drop_3)
+L_opt_after_push_nil_3:
 	MOV(R1, IMM(MEM_START + 1))
 	MOV(R2, STARG(1))
-L_opt_pack_args_2:
+L_opt_pack_args_3:
 	CMP(R2, IMM(0))
-	JUMP_EQ(L_opt_after_pack_args_2)
+	JUMP_EQ(L_opt_after_pack_args_3)
 	PUSH(IMM(3))
 	CALL(MALLOC)
 	DROP(1)
@@ -1768,8 +1780,8 @@ L_opt_pack_args_2:
 	MOV(INDD(R0, 2), R1)
 	MOV(R1, R0)
 	DECR(R2)
-	JUMP(L_opt_pack_args_2)
-L_opt_after_pack_args_2:
+	JUMP(L_opt_pack_args_3)
+L_opt_after_pack_args_3:
 	MOV(STARG(R3), R1)
 	MOV(R4, STARG(1))
 	MOV(R5, STARG(1))
@@ -1780,24 +1792,24 @@ L_opt_after_pack_args_2:
 	MOV(R7, IMM(0))
 	ADD(R7, IMM(4))
 	MOV(R6, IMM(0))
-L_lambda_opt_drop_frame_2:
+L_lambda_opt_drop_frame_3:
 	CMP(R6, R7)
-	JUMP_EQ(L_lambda_opt_drop_frame_end_2)
+	JUMP_EQ(L_lambda_opt_drop_frame_end_3)
 	MOV(R8, STARG(R3))
 	MOV(STARG(R4), R8)
 	INCR(R6)
 	DECR(R4)
 	DECR(R3)
-	JUMP(L_lambda_opt_drop_frame_2)
-L_lambda_opt_drop_frame_end_2:
+	JUMP(L_lambda_opt_drop_frame_3)
+L_lambda_opt_drop_frame_end_3:
 	DROP(R5)
-L_lambda_opt_no_frame_drop_2:
+L_lambda_opt_no_frame_drop_3:
 	PUSH(FP)
 	MOV(FP, SP)
 MOV(R0, FPARG(0 + 2))
 	POP(FP)
 	RETURN
-L_lambda_opt_end_2:
+L_lambda_opt_end_3:
 	MOV(IND(FREE_VAR_TAB_START + 19), R0)
 	MOV(R0, IMM(MEM_START))
 
@@ -1806,7 +1818,7 @@ L_lambda_opt_end_2:
   CALL(WRITE_SOB_IF_NOT_VOID)
   DROP(1)
 
-  L_simple_env_expansion_6:
+  L_simple_env_expansion_9:
 	PUSH(IMM(1))
 	CALL(MALLOC)
 	MOV(R1, R0)
@@ -1814,15 +1826,15 @@ L_lambda_opt_end_2:
 	MOV(R2, FPARG(0))
 	MOV(R3, IMM(0))
 	MOV(R4, IMM(1))
-L_simple_env_expand_6:
+L_simple_env_expand_9:
 	CMP(R3, 0)
-	JUMP_EQ(L_simple_env_expand_end_6)
+	JUMP_EQ(L_simple_env_expand_end_9)
 	MOV(R5, INDD(R2, R3))
 	MOV(INDD(R1, R4), R5)
 	INCR(R3)
 	INCR(R4)
-	JUMP(L_simple_env_expand_6)
-L_simple_env_expand_end_6:
+	JUMP(L_simple_env_expand_9)
+L_simple_env_expand_end_9:
 	PUSH(FPARG(1))
 	CALL(MALLOC)
 	MOV(R3, R0)
@@ -1830,32 +1842,32 @@ L_simple_env_expand_end_6:
 	MOV(R4, IMM(2))
 	MOV(R5, FPARG(1))
 	ADD(R5, IMM(2))
-L_simple_param_copy_6:
+L_simple_param_copy_9:
 	CMP(R4, R5)
-	JUMP_EQ(L_simple_param_copy_end_6)
+	JUMP_EQ(L_simple_param_copy_end_9)
 	MOV(R9, R4)
 	SUB(R9, IMM(2))
 	MOV(R6, FPARG(R4))
 	MOV(INDD(R3, R9), R6)
 	INCR(R4)
-	JUMP(L_simple_param_copy_6)
-L_simple_param_copy_end_6:
+	JUMP(L_simple_param_copy_9)
+L_simple_param_copy_end_9:
 	MOV(INDD(R1, 0), R3)
 	PUSH(IMM(3))
 	CALL(MALLOC)
 	DROP(1)
 	MOV(INDD(R0, 0), IMM(T_CLOSURE))
 	MOV(INDD(R0, 1), R1)
-	MOV(INDD(R0, 2), LABEL(L_lambda_simple_6))
-	JUMP(L_lambda_simple_end_6)
-L_lambda_simple_6:
+	MOV(INDD(R0, 2), LABEL(L_lambda_simple_9))
+	JUMP(L_lambda_simple_end_9)
+L_lambda_simple_9:
 	PUSH(FP)
 	MOV(FP, SP)
 	MOV(R15, FPARG(1))
 	CMP(R15, IMM(2))
 	JUMP_NE(EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS)
-L_if_else_6:
-L_applic_24:
+L_if_else_9:
+L_applic_38:
 MOV(R0, FPARG(1 + 2))
 	PUSH(R0)
 	PUSH(IMM(1))
@@ -1869,15 +1881,15 @@ MOV(R0, FPARG(1 + 2))
 	POP(R1)
 	POP(R1)
 	DROP(R1)
-L_lapplic_end_24:
+L_lapplic_end_38:
 	CMP(R0, IMM(MEM_START + 2))
-	JUMP_EQ(L_else_6)
+	JUMP_EQ(L_else_9)
 	MOV(R0, IMM(MEM_START + 1))
-	JUMP(L_if_end_6)
-L_else_6: 
-L_applic_tp_4:
-L_applic_22:
-L_applic_23:
+	JUMP(L_if_end_9)
+L_else_9: 
+L_applic_tp_6:
+L_applic_36:
+L_applic_37:
 MOV(R0, FPARG(1 + 2))
 	PUSH(R0)
 	PUSH(IMM(1))
@@ -1891,7 +1903,7 @@ MOV(R0, FPARG(1 + 2))
 	POP(R1)
 	POP(R1)
 	DROP(R1)
-L_lapplic_end_23:
+L_lapplic_end_37:
 	PUSH(R0)
 MOV(R0, FPARG(0 + 2))
 	PUSH(R0)
@@ -1906,10 +1918,10 @@ MOV(R0, FPARG(0 + 2))
 	POP(R1)
 	POP(R1)
 	DROP(R1)
-L_lapplic_end_22:
+L_lapplic_end_36:
 	PUSH(R0)
-L_applic_20:
-L_applic_21:
+L_applic_34:
+L_applic_35:
 MOV(R0, FPARG(1 + 2))
 	PUSH(R0)
 	PUSH(IMM(1))
@@ -1923,7 +1935,7 @@ MOV(R0, FPARG(1 + 2))
 	POP(R1)
 	POP(R1)
 	DROP(R1)
-L_lapplic_end_21:
+L_lapplic_end_35:
 	PUSH(R0)
 	PUSH(IMM(1))
 MOV(R0, FPARG(0 + 2))
@@ -1934,7 +1946,7 @@ MOV(R0, FPARG(0 + 2))
 	POP(R1)
 	POP(R1)
 	DROP(R1)
-L_lapplic_end_20:
+L_lapplic_end_34:
 	PUSH(R0)
 	PUSH(IMM(2))
 	MOV(R0, INDD(FREE_VAR_TAB_START, 14))
@@ -1956,26 +1968,26 @@ L_lapplic_end_20:
 	ADD(R14, FPARG(1))
 	ADD(R14, IMM(1))
 	MOV(SP, R4)
-L_applic_tp_drop_frame_4:
+L_applic_tp_drop_frame_6:
 	CMP(R5, R6)
-	JUMP_EQ(L_applic_tp_drop_frame_end_4)
+	JUMP_EQ(L_applic_tp_drop_frame_end_6)
 	MOV(R7, STACK(R3))
 	PUSH(R7)
 	INCR(R3)
 	INCR(R5)
-	JUMP(L_applic_tp_drop_frame_4)
-L_applic_tp_drop_frame_end_4:
+	JUMP(L_applic_tp_drop_frame_6)
+L_applic_tp_drop_frame_end_6:
 	PUSH(R2)
 	MOV(FP, R1)
 	JUMPA(INDD(R0, 2))
 	POP(R1)
 	POP(R1)
 	DROP(R1)
-L_applic_tp_end_4:
-L_if_end_6:
+L_applic_tp_end_6:
+L_if_end_9:
 	POP(FP)
 	RETURN
-L_lambda_simple_end_6:
+L_lambda_simple_end_9:
 	MOV(IND(FREE_VAR_TAB_START + 22), R0)
 	MOV(R0, IMM(MEM_START))
 
@@ -1984,11 +1996,11 @@ L_lambda_simple_end_6:
   CALL(WRITE_SOB_IF_NOT_VOID)
   DROP(1)
 
-  L_applic_25:
+  L_applic_39:
 	MOV(R0, IMM(MEM_START + 6))
 	PUSH(R0)
 	PUSH(IMM(1))
-	MOV(R0, INDD(FREE_VAR_TAB_START, 12))
+	MOV(R0, INDD(FREE_VAR_TAB_START, 18))
 	CMP(R0, T_UNDEFINED)
 	JUMP_EQ(EXCEPTION_UNDEFINED_VARIABLE)
 	CMP(IND(R0), IMM(T_CLOSURE))
@@ -1998,18 +2010,18 @@ L_lambda_simple_end_6:
 	POP(R1)
 	POP(R1)
 	DROP(R1)
-L_lapplic_end_25:
+L_lapplic_end_39:
 
 
   PUSH(R0)
   CALL(WRITE_SOB_IF_NOT_VOID)
   DROP(1)
 
-  L_applic_26:
+  L_applic_40:
 	MOV(R0, IMM(MEM_START + 8))
 	PUSH(R0)
 	PUSH(IMM(1))
-	MOV(R0, INDD(FREE_VAR_TAB_START, 12))
+	MOV(R0, INDD(FREE_VAR_TAB_START, 18))
 	CMP(R0, T_UNDEFINED)
 	JUMP_EQ(EXCEPTION_UNDEFINED_VARIABLE)
 	CMP(IND(R0), IMM(T_CLOSURE))
@@ -2019,16 +2031,16 @@ L_lapplic_end_25:
 	POP(R1)
 	POP(R1)
 	DROP(R1)
-L_lapplic_end_26:
+L_lapplic_end_40:
 
 
   PUSH(R0)
   CALL(WRITE_SOB_IF_NOT_VOID)
   DROP(1)
 
-  L_applic_27:
+  L_applic_41:
 	PUSH(IMM(0))
-	MOV(R0, INDD(FREE_VAR_TAB_START, 12))
+	MOV(R0, INDD(FREE_VAR_TAB_START, 18))
 	CMP(R0, T_UNDEFINED)
 	JUMP_EQ(EXCEPTION_UNDEFINED_VARIABLE)
 	CMP(IND(R0), IMM(T_CLOSURE))
@@ -2038,7 +2050,7 @@ L_lapplic_end_26:
 	POP(R1)
 	POP(R1)
 	DROP(R1)
-L_lapplic_end_27:
+L_lapplic_end_41:
 
 
   PUSH(R0)

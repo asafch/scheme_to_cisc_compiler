@@ -29,7 +29,7 @@ v  cons
 v  denominator
 v  eq?
 v  integer?
-  integer->char
+v  integer->char
 v  list (variadic)
   make-string
   make-vector

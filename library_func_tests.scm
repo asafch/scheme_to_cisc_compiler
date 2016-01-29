@@ -139,7 +139,7 @@
 ;(integer->char 10)                          ; #\newline
 ;(integer->char 255)                         ; y with two dots above it
 ;(integer->char '())                         ; exception - () is not a scalar value
-;(intger->char)                              ; excpetion - wrong number of arguments
+;(integer->char)                              ; excpetion - wrong number of arguments
 
 ;list (variadic)
 ;(list list)                                 ; (#<procedure at ...> . ())

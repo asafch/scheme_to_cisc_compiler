@@ -2392,6 +2392,19 @@ L_not_integer:
 L_after_is_integer:" ^
 exit_integer ^
 enter_integertochar ^
+"
+  CMP(FPARG(1), IMM(1))
+  JUMP_NE(EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS)
+  MOV(R1, FPARG(2))
+  CMP(INDD(R1, 0), IMM(T_INTEGER))
+  JUMP_NE(EXCEPTION_NOT_AN_INTEGER)
+  MOV(R1, INDD(R1, 1))
+  PUSH(IMM(2))
+  CALL(MALLOC)
+  DROP(1)
+  MOV(INDD(R0, 0), IMM(T_CHAR))
+  MOV(INDD(R0, 1), R1)
+" ^
 exit_integertochar ^
 enter_makestring ^
 exit_makestring ^
