@@ -33,7 +33,7 @@ v  integer?
 v  list (variadic)
   make-string
   make-vector
-  map
+v  map
 v  not
 v  null?
 v  number?

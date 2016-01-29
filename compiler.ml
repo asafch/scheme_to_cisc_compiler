@@ -2676,8 +2676,8 @@ let scheme_impls =
     (lambda (f lst)
       (if (null? lst)
           '()
-          (cons (f (car lst)
-                (map f (cdr lst)))))))
+          (cons (f (car lst))
+                (map f (cdr lst))))))
 ";;
 
 let compile_scheme_file scm_source_file asm_target_file =
