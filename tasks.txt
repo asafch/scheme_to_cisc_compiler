@@ -45,7 +45,7 @@ v  remainder
   set-car!
   set-cdr!
 v  string-length
-  string-ref
+v  string-ref
   string-set!
   string->symbol
 v  string?

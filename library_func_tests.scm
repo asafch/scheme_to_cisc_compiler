@@ -248,7 +248,7 @@
 
 ;string-ref
 ;(string-ref "string" 1)                     ; #\t
-;(string-ref 'string 1)                      ; exception - not a symbol
+;(string-ref 'string 1)                      ; exception - not a string
 ;(string-ref "string" 99)                    ; exception - out of bounds
 ;(string-ref)                                ; excpetion - wrong number of arguments
 ;(string-ref "string")                       ; excpetion - wrong number of arguments

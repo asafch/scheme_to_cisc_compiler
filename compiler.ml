@@ -2519,6 +2519,29 @@ enter_stringlength ^
 L_string_length_end:" ^
 exit_stringlength ^
 enter_stringref ^
+"
+  CMP(FPARG(1), IMM(2))
+  JUMP_NE(EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS)
+  MOV(R0, FPARG(2))
+  CMP(IND(R0), IMM(T_STRING))
+  JUMP_NE(EXCEPTION_NOT_A_STRING)
+  MOV(R1, FPARG(3))
+  CMP(IND(R1), IMM(T_INTEGER))
+  JUMP_NE(EXCEPTION_NOT_AN_INTEGER)
+  MOV(R1, INDD(R1, 1))
+  MOV(R2, INDD(R0, 1))
+  CMP(R1, 0)
+  JUMP_LT(EXCEPTION_BAD_INDEX)
+  CMP(R1, R2)
+  JUMP_GE(EXCEPTION_BAD_INDEX)
+  ADD(R1, IMM(2))
+  MOV(R2, INDD(R0, R1))
+  PUSH(IMM(2))
+  CALL(MALLOC)
+  DROP(1)
+  MOV(INDD(R0, 0), IMM(T_CHAR))
+  MOV(INDD(R0, 1), R2)
+" ^
 exit_stringref ^
 enter_stringset ^
 exit_stringset ^
