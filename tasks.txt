@@ -23,7 +23,7 @@ v  append (variadic)
 v  boolean?
 v  car
 v  cdr
-  char->integer
+v  char->integer
 v  char?
 v  cons
 v  denominator

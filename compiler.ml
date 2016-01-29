@@ -2217,6 +2217,19 @@ enter_cdr ^
   MOV(R0, INDD(R0, 2))" ^
 exit_cdr ^
 enter_chartointeger ^
+"
+  CMP(FPARG(1), IMM(1))
+  JUMP_NE(EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS)
+  MOV(R1, FPARG(2))
+  CMP(INDD(R1, 0), IMM(T_CHAR))
+  JUMP_NE(EXCEPTION_NOT_A_CHAR)
+  MOV(R1, INDD(R1, 1))
+  PUSH(IMM(2))
+  CALL(MALLOC)
+  DROP(1)
+  MOV(INDD(R0, 0), IMM(T_INTEGER))
+  MOV(INDD(R0, 1), R1)
+" ^
 exit_chartointeger ^
 enter_char ^
 "
