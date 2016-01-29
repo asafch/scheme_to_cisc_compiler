@@ -312,6 +312,7 @@
 ;vector-set!
 ;(vector-set! '#(4 5 6) 1 7)                 ; #<void>
 ;(vector-set! '#(4 5 6) 3 7)                 ; exception - out of bounds
+;(vector-set! '#(4 5 6) -1 7)                ; exception - out of bounds
 ;(vector-set! "vector" 1 2)                  ; exception - not a vector
 ;(vector-set!)                               ; excpetion - wrong number of arguments
 ;(vector-set! '#(4 5 6) 1)                   ; excpetion - wrong number of arguments

@@ -54,6 +54,6 @@ v  symbol?
 v  vector
 v  vector-length
 v  vector-ref
-  vector-set!
+v  vector-set!
 v  vector?
 v  zero?
