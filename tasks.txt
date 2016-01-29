@@ -30,11 +30,11 @@ v  denominator
 v  eq?
 v  integer?
   integer->char
-  list (variadic)
+v  list (variadic)
   make-string
   make-vector
   map
-  not
+v  not
 v  null?
 v  number?
 v  numerator

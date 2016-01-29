@@ -2047,7 +2047,6 @@ L_" ^ cropped_func_name ^ ":
 L_exit_" ^ cropped_func_name ^ ":\n\n\n");;
 
 let make_prologue () =
-let (enter_append, exit_append) = make_library_func_string "append" in
 let (enter_apply, exit_apply) = make_library_func_string "apply" in
 let (enter_less, exit_less) = make_library_func_string "<" in
 let (enter_equal, exit_eqaul) = make_library_func_string "=" in
@@ -2066,11 +2065,8 @@ let (enter_denominator, exit_denominator) = make_library_func_string "denominato
 let (enter_eq, exit_eq) = make_library_func_string "eq?" in
 let (enter_integer, exit_integer) = make_library_func_string "integer?" in
 let (enter_integertochar, exit_integertochar) = make_library_func_string "integer->char" in
-let (enter_list, exit_list) = make_library_func_string "list" in
 let (enter_makestring, exit_makestring) = make_library_func_string "make-string" in
 let (enter_makevector, exit_makevector) = make_library_func_string "make-vector" in
-let (enter_map, exit_map) = make_library_func_string "map" in
-let (enter_not, exit_not) = make_library_func_string "not" in
 let (enter_null, exit_null) = make_library_func_string "null?" in
 let (enter_number, exit_number) = make_library_func_string "number?" in
 let (enter_numerator, exit_numerator) = make_library_func_string "numerator" in
@@ -2164,8 +2160,6 @@ CALL(MALLOC) //allocate memory for all free variables in the program
 DROP(1)\n" ^
 make_free_var_tab_init_string () ^
 make_sym_tab_init_string () ^
-enter_append ^
-exit_append ^
 enter_apply ^
 exit_apply ^
 enter_less ^
@@ -2366,16 +2360,10 @@ L_after_is_integer:" ^
 exit_integer ^
 enter_integertochar ^
 exit_integertochar ^
-enter_list ^
-exit_list ^
 enter_makestring ^
 exit_makestring ^
 enter_makevector ^
 exit_makevector ^
-enter_map ^
-exit_map ^
-enter_not ^
-exit_not ^
 enter_null ^
 "
   CMP(FPARG(1), IMM(1))
@@ -2655,8 +2643,33 @@ let epilogue =
   return 0;
 }";;
 
+let scheme_impls =
+"
+  (define append
+    (lambda (ls1 ls2)
+      (if (null? ls1)
+          ls1
+          (cons (car ls1)
+                (append (cdr ls1) ls2)))))
+
+  (define not
+    (lambda (x)
+      (if (eq? x #f)
+          #t
+          #f)))
+
+  (define list (lambda s s))
+
+  (define map
+    (lambda (f lst)
+      (if (null? lst)
+          '()
+          (cons (f (car lst)
+                (map f (cdr lst)))))))
+";;
+
 let compile_scheme_file scm_source_file asm_target_file =
-  let file_as_string = file_to_string scm_source_file in
+  let file_as_string = scheme_impls ^ (file_to_string scm_source_file) in
   let file_as_expr'_list = List.map Semantics.run_semantics
                                     (Tag_Parser.read_expressions file_as_string) in
   begin
