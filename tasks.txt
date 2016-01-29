@@ -10,8 +10,10 @@ v-dummy frame at machine initialization
 -test: box-get
 v-ApplicTP
 v-LambdaOpt
-_applying a variadic lambda on no arguments should return '() and not '(() . ())
+v_applying a variadic lambda on no arguments should return '() and not '(() . ())
+
 -library functions
+
 v  append (variadic)
   apply
   < (variadic)
@@ -31,8 +33,8 @@ v  eq?
 v  integer?
 v  integer->char
 v  list (variadic)
-  make-string
-  make-vector
+v  make-string
+v  make-vector
 v  map
 v  not
 v  null?

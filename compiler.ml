@@ -2411,8 +2411,84 @@ enter_integertochar ^
 " ^
 exit_integertochar ^
 enter_makestring ^
+"
+  CMP(FPARG(1), IMM(2))
+  JUMP_GT(EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS)
+  CMP(FPARG(1), IMM(0))
+  JUMP_EQ(EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS)
+  MOV(R1, FPARG(2))
+  CMP(IND(R1), IMM(T_INTEGER))
+  JUMP_NE(EXCEPTION_NOT_AN_INTEGER)
+  MOV(R1, INDD(R1, 1))
+  ADD(R1, IMM(2))
+  PUSH(R1)
+  CALL(MALLOC)
+  DROP(1)
+  MOV(INDD(R0, 0), IMM(T_STRING))
+  SUB(R1, IMM(2))
+  MOV(INDD(R0, 1), R1)        //string length
+  MOV(R4, IMM(0))             //loop counter
+  MOV(R5, IMM(2))             //new val displacement
+  CMP(FPARG(1), IMM(1))
+  JUMP_EQ(L_make_string_default_value)
+  MOV(R2, FPARG(3))
+  CMP(INDD(R2, 0), IMM(T_CHAR))
+  JUMP_NE(EXCEPTION_NOT_A_CHAR)
+  MOV(R2, INDD(R2, 1))
+  JUMP(L_make_string_populate)
+L_make_string_default_value:
+  MOV(R2, IMM(0))
+L_make_string_populate:
+  CMP(R4, R1)
+  JUMP_EQ(L_make_string_populate_end)
+  MOV(INDD(R0, R5), R2)
+  INCR(R4)
+  INCR(R5)
+  JUMP(L_make_string_populate)
+L_make_string_populate_end:
+" ^
 exit_makestring ^
 enter_makevector ^
+"
+  CMP(FPARG(1), IMM(2))
+  JUMP_GT(EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS)
+  CMP(FPARG(1), IMM(0))
+  JUMP_EQ(EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS)
+  MOV(R1, FPARG(2))
+  CMP(IND(R1), IMM(T_INTEGER))
+  JUMP_NE(EXCEPTION_NOT_AN_INTEGER)
+  MOV(R1, INDD(R1, 1))
+  ADD(R1, IMM(2))
+  PUSH(R1)
+  CALL(MALLOC)
+  DROP(1)
+  MOV(INDD(R0, 0), IMM(T_VECTOR))
+  SUB(R1, IMM(2))
+  MOV(INDD(R0, 1), R1)        //vector length
+  MOV(R4, IMM(0))             //loop counter
+  MOV(R5, IMM(2))             //new val displacement
+  CMP(FPARG(1), IMM(1))
+  JUMP_EQ(L_make_vector_default_value)
+  MOV(R2, FPARG(3))
+  JUMP(L_make_vector_populate)
+L_make_vector_default_value:
+  PUSH(R0)
+  PUSH(IMM(2))
+  CALL(MALLOC)
+  DROP(1)
+  MOV(R2, R0)
+  POP(R0)
+  MOV(INDD(R2, 0), IMM(T_INTEGER))
+  MOV(INDD(R2, 1), IMM(0))
+L_make_vector_populate:
+  CMP(R4, R1)
+  JUMP_EQ(L_make_vector_populate_end)
+  MOV(INDD(R0, R5), R2)
+  INCR(R4)
+  INCR(R5)
+  JUMP(L_make_vector_populate)
+L_make_vector_populate_end:
+" ^
 exit_makevector ^
 enter_null ^
 "
