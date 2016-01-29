@@ -250,6 +250,8 @@
 ;(string-ref "string" 1)                     ; #\t
 ;(string-ref 'string 1)                      ; exception - not a string
 ;(string-ref "string" 99)                    ; exception - out of bounds
+;(string-ref "string" -1)                    ; exception - out of bounds
+;(string-ref "string" 'a)                    ; exception - not an integer
 ;(string-ref)                                ; excpetion - wrong number of arguments
 ;(string-ref "string")                       ; excpetion - wrong number of arguments
 ;(string-ref "string" 1 2)                   ; excpetion - wrong number of arguments
@@ -257,6 +259,7 @@
 ;string-set!
 ;(string-set! "string" 1 #\p)                ; #<void>
 ;(string-set! "string" 95 #\o)               ; exception - out of bounds
+;(string-set! "string" -1 #\o)               ; exception - out of bounds
 ;(string-set! "string" 1 "kk")               ; exception - not a char
 ;(string-set! 'string 1 #\p)                 ; exception - not a string
 ;(string-set! "string" 1/2 #\p)              ; exception - not an integer

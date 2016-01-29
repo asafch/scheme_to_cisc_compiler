@@ -2128,6 +2128,10 @@ EXCEPTION_UNDEFINED_VARIABLE:
   printf(\"Exception: undefined variable\\n\");
   HALT
 
+EXCEPTION_NOT_A_CHAR:
+  printf(\"Exception: argument is not a character\\n\");
+  HALT
+
 EXCEPTION_NOT_A_PAIR:
   printf(\"Exception: argument is not a pair\\n\");
   HALT
@@ -2544,6 +2548,28 @@ enter_stringref ^
 " ^
 exit_stringref ^
 enter_stringset ^
+"
+  CMP(FPARG(1), IMM(3))
+  JUMP_NE(EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS)
+  MOV(R0, FPARG(2))
+  CMP(IND(R0), IMM(T_STRING))
+  JUMP_NE(EXCEPTION_NOT_A_STRING)
+  MOV(R1, FPARG(3))
+  CMP(IND(R1), IMM(T_INTEGER))
+  JUMP_NE(EXCEPTION_NOT_AN_INTEGER)
+  MOV(R2, FPARG(4))
+  MOV(R1, INDD(R1, 1))
+  MOV(R3, INDD(R0, 1))
+  CMP(R1, 0)
+  JUMP_LT(EXCEPTION_BAD_INDEX)
+  CMP(R1, R3)
+  JUMP_GE(EXCEPTION_BAD_INDEX)
+  ADD(R1, IMM(2))
+  CMP(INDD(R2, 0), IMM(T_CHAR))
+  JUMP_NE(EXCEPTION_NOT_A_CHAR)
+  MOV(INDD(R0, R1), R2)
+  MOV(R0, IMM(MEM_START + " ^ string_of_int (const_lookup Void !const_table) ^ "))
+" ^
 exit_stringset ^
 enter_stringtosymbol ^
 exit_stringtosymbol ^

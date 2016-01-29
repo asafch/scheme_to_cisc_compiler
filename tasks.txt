@@ -46,7 +46,7 @@ v  remainder
   set-cdr!
 v  string-length
 v  string-ref
-  string-set!
+v  string-set!
   string->symbol
 v  string?
 v  symbol?
