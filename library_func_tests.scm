@@ -2,7 +2,7 @@
 ;(append '(1 2 3) '(4 5 6))                  ; (1 . (2 . (3 . (4 . (5 . (6 . ()))))))
 ;(append 'a)                                 ; exception - wrong number of arguments
 ;(append 2 1)                                ; exception - l1 not a list
-;(append '(1) 2)                             ; exception - l2 not a list
+;(append '(1) 2)                             ; (1 . 2)
 
 ;apply
 ;(apply (lambda (x) x) '("application"))     ; "application"
@@ -96,10 +96,11 @@
 ;(char?)                                     ; excpetion - wrong number of arguments
 
 ;cons
+;(cons (lambda () #t) (if #f #t))            ; (#<procedure at...> . #<void>)
 ;(cons 0xabc #t)                             ; (2748 . #t)
+;(cons 1 (cons -2 (cons 3 (cons #t '()))))   ; (1 . (-2 . (3 . (#t . ()))))
 ;(cons)                                      ; excpetion - wrong number of arguments
 ;(cons #f)                                   ; excpetion - wrong number of arguments
-;(cons (lambda () #t) (if #f #t))            ; (#<procedure at...> . #<void>)
 
 ;denominator
 ;(denominator -2)                            ; 1

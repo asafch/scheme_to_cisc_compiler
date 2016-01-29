@@ -12,7 +12,7 @@ v-ApplicTP
 v-LambdaOpt
 _applying a variadic lambda on no arguments should return '() and not '(() . ())
 -library functions
-  append (variadic)
+v  append (variadic)
   apply
   < (variadic)
   = (variadic)
@@ -25,7 +25,7 @@ v  car
 v  cdr
   char->integer
 v  char?
-  cons
+v  cons
 v  denominator
 v  eq?
 v  integer?

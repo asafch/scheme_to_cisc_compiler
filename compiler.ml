@@ -2225,6 +2225,18 @@ L_not_a_char:
 L_after_is_char:" ^
 exit_char ^
 enter_cons ^
+"
+  CMP(FPARG(1), IMM(2))
+  JUMP_NE(EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS)
+  PUSH(IMM(3))
+  CALL(MALLOC)
+  DROP(1)
+  MOV(INDD(R0, 0), IMM(T_PAIR))
+  MOV(R1, FPARG(2))
+  MOV(INDD(R0, 1), R1)        //car
+  MOV(R1, FPARG(3))
+  MOV(INDD(R0, 2), R1)        //cdr
+" ^
 exit_cons ^
 enter_denominator ^
 "
@@ -2648,7 +2660,7 @@ let scheme_impls =
   (define append
     (lambda (ls1 ls2)
       (if (null? ls1)
-          ls1
+          ls2
           (cons (car ls1)
                 (append (cdr ls1) ls2)))))
 
