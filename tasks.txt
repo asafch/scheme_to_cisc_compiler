@@ -42,8 +42,8 @@ v  pair?
 v  procedure?
 v  rational?
 v  remainder
-  set-car!
-  set-cdr!
+v  set-car!
+v  set-cdr!
 v  string-length
 v  string-ref
 v  string-set!

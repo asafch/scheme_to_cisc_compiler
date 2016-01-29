@@ -2504,8 +2504,28 @@ enter_remainder ^
 L_remainder_end:" ^
 exit_remainder ^
 enter_setcar ^
+"
+  CMP(FPARG(1), IMM(2))
+  JUMP_NE(EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS)
+  MOV(R0, FPARG(2))
+  CMP(IND(R0), IMM(T_PAIR))
+  JUMP_NE(EXCEPTION_NOT_A_PAIR)
+  MOV(R1, FPARG(3))
+  MOV(INDD(R0, 1), R1)
+  MOV(R0, IMM(MEM_START + " ^ string_of_int (const_lookup Void !const_table) ^ "))
+" ^
 exit_setcar ^
 enter_setcdr ^
+"
+  CMP(FPARG(1), IMM(2))
+  JUMP_NE(EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS)
+  MOV(R0, FPARG(2))
+  CMP(IND(R0), IMM(T_PAIR))
+  JUMP_NE(EXCEPTION_NOT_A_PAIR)
+  MOV(R1, FPARG(3))
+  MOV(INDD(R0, 2), R1)
+  MOV(R0, IMM(MEM_START + " ^ string_of_int (const_lookup Void !const_table) ^ "))
+" ^
 exit_setcdr ^
 enter_stringlength ^
 "

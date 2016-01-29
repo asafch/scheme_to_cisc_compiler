@@ -231,13 +231,26 @@
 ;(set-car! "set-car!" set-car!)              ; exception - not a pair
 ;(set-car! '(1 2 3) (cdr '(1 2 3)))          ; #<void>, print nothing
 ;(set-car!)                                  ; excpetion - wrong number of arguments
+;(set-cdr!)                                  ; excpetion - wrong number of arguments
+; run the next 5 test together, as they test mutation
+;(define l '(1 2 3))                         ; #<void>, print nothing
+;(set-car! l '(4 5))                         ; #<void>, print nothing
+;l                                           ; ((4 . (5 . ())) . (2 . (3 . ())))
+;(car l)                                     ; (4 . (5 . ()))
+;(cdr l)                                     ; (2 . (3 . ()))
 
 ;set-cdr!
 ;(set-cdr! '(a b c) '(x y z))                ; #<void>, print nothing
 ;(set-cdr! '() 5)                            ; exception - not a pair
-;(set-cdr! "set-cdr!" sdt-car!)              ; exception - not a pair
+;(set-cdr! "set-cdr!" set-car!)              ; exception - not a pair
 ;(set-cdr! '(1 2 3) (cdr '(1 2 3)))          ; #<void>, print nothing
 ;(set-cdr!)                                  ; excpetion - wrong number of arguments
+; run the next 5 test together, as they test mutation
+;(define l '(1 2 3))                         ; #<void>, print nothing
+;(set-cdr! l '(4 5))                         ; #<void>, print nothing
+;l                                           ; (1 . (4 . (5 . ())))
+;(car l)                                     ; 1
+;(cdr l)                                     ; (4 . (5 . ()))
 
 ;string-length
 ;(string-length "")                          ; 0
