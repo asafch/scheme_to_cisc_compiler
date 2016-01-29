@@ -2129,24 +2129,28 @@ EXCEPTION_UNDEFINED_VARIABLE:
   HALT
 
 EXCEPTION_NOT_A_PAIR:
-printf(\"Exception: argument is not a pair\\n\");
-HALT
+  printf(\"Exception: argument is not a pair\\n\");
+  HALT
 
 EXCEPTION_NOT_A_FRACTION:
-printf(\"Exception: argument is not a fraction\\n\");
-HALT
+  printf(\"Exception: argument is not a fraction\\n\");
+  HALT
 
 EXCEPTION_NOT_AN_INTEGER:
-printf(\"Exception: argument is not an integer\\n\");
-HALT
+  printf(\"Exception: argument is not an integer\\n\");
+  HALT
 
 EXCEPTION_NOT_A_STRING:
-printf(\"Exception: argument is not a string\\n\");
-HALT
+  printf(\"Exception: argument is not a string\\n\");
+  HALT
 
 EXCEPTION_NOT_A_VECTOR:
-printf(\"Exception: argument is not a vector\\n\");
-HALT
+  printf(\"Exception: argument is not a vector\\n\");
+  HALT
+
+EXCEPTION_BAD_INDEX:
+  printf(\"Exception: argument is not a valid index for access\\n\");
+  HALT
 
 CONTINUE:
 PUSH(IMM(1 + " ^ string_of_int !const_tab_length ^ "))
@@ -2590,6 +2594,24 @@ enter_vectorlength ^
 L_vector_length_end:" ^
 exit_vectorlength ^
 enter_vectorref ^
+"
+  CMP(FPARG(1), IMM(2))
+  JUMP_NE(EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS)
+  MOV(R0, FPARG(2))
+  CMP(IND(R0), IMM(T_VECTOR))
+  JUMP_NE(EXCEPTION_NOT_A_VECTOR)
+  MOV(R1, FPARG(3))
+  CMP(IND(R1), IMM(T_INTEGER))
+  JUMP_NE(EXCEPTION_NOT_AN_INTEGER)
+  MOV(R1, INDD(R1, 1))
+  MOV(R2, INDD(R0, 1))
+  CMP(R1, 0)
+  JUMP_LT(EXCEPTION_BAD_INDEX)
+  CMP(R1, R2)
+  JUMP_GE(EXCEPTION_BAD_INDEX)
+  ADD(R1, IMM(2))
+  MOV(R0, INDD(R0, R1))
+" ^
 exit_vectorref ^
 enter_vectorset ^
 exit_vectorset ^
