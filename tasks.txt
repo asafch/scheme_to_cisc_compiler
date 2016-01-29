@@ -50,7 +50,7 @@ v  string-set!
   string->symbol
 v  string?
 v  symbol?
-  symbol->string
+v  symbol->string
 v  vector
 v  vector-length
 v  vector-ref

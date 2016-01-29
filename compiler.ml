@@ -2148,6 +2148,10 @@ EXCEPTION_NOT_A_STRING:
   printf(\"Exception: argument is not a string\\n\");
   HALT
 
+EXCEPTION_NOT_A_SYMBOL:
+  printf(\"Exception: argument is not a symbol\\n\");
+  HALT
+
 EXCEPTION_NOT_A_VECTOR:
   printf(\"Exception: argument is not a vector\\n\");
   HALT
@@ -2648,6 +2652,14 @@ L_not_a_symbol:
 L_after_is_symbol:" ^
 exit_symbol ^
 enter_symboltostring ^
+"
+  CMP(FPARG(1), IMM(1))
+  JUMP_NE(EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS)
+  MOV(R0, FPARG(2))
+  CMP(IND(R0), IMM(T_SYMBOL))
+  JUMP_NE(EXCEPTION_NOT_A_SYMBOL)
+  MOV(R0, INDD(R0, 1))
+" ^
 exit_symboltostring ^
 enter_vector ^
 "
