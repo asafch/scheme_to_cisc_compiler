@@ -2132,6 +2132,10 @@ EXCEPTION_NOT_A_CHAR:
   printf(\"Exception: argument is not a character\\n\");
   HALT
 
+EXCEPTION_NOT_A_CLOSURE:
+  printf(\"Exception: argument is not a procedure\\n\");
+  HALT
+
 EXCEPTION_NOT_A_PAIR:
   printf(\"Exception: argument is not a pair\\n\");
   HALT
@@ -2173,6 +2177,73 @@ DROP(1)\n" ^
 make_free_var_tab_init_string () ^
 make_sym_tab_init_string () ^
 enter_apply ^
+"
+  CMP(FPARG(1), IMM(2))
+  JUMP_LT(EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS)
+  MOV(R1, FPARG(2))         //the procedure
+  CMP(IND(R1), IMM(T_CLOSURE))
+  JUMP_NE(EXCEPTION_NOT_A_CLOSURE)
+  MOV(R12, FPARG(1))          //R12 = n
+  MOV(R11, SP)
+  SUB(R11, IMM(4))
+  SUB(R11, FPARG(1))        //R11 is the position on stack of the optional args list
+  MOV(R2, STACK(R11))         //the arguments list
+  ADD(R11, IMM(1))
+  CMP(IND(R2), IMM(T_PAIR))
+  JUMP_NE(EXCEPTION_NOT_A_PAIR)
+  MOV(R4, IMM(0))           //list length counter
+  MOV(R5, FPARG(-1))        //return address
+  MOV(R6, FPARG(-2))        //old FP
+  MOV(R7, R2)
+L_apply_list_length:
+  CMP(IND(R7), IMM(T_NIL))
+  JUMP_EQ(L_apply_list_length_end)
+  INCR(R4)
+  MOV(R7, INDD(R7, 2))
+  JUMP(L_apply_list_length)
+L_apply_list_length_end:
+  MOV(R7, SP)
+  SUB(R7, IMM(6))                 //R7 is the first formal argument
+  ADD(SP, R4)
+  SUB(SP, IMM(3))                     //SP is where it should be after the frame is fixed, subtracting 2 for the procedure and optional args list
+  //do not push the old FP back to the stack - it will be pushed at the entry to the procedure's body
+  MOV(STARG(-1), R5)                  //set the old return address
+  MOV(STARG(0), INDD(R1, 2))          //set the procedure's environment
+  //do not yet set the corrected number of arguments - it can overwrite the first formal argument, if there is one
+  //set the corrected number of arguments only after repositioning all formal arguments and unwrapping the optionals list
+  MOV(R8, SP)
+  SUB(R8, IMM(4))                     //R8 is the new position for the first formal argument (R7 is the old one)
+  MOV(R9, IMM(0))                     //loop counter for repostioning formal arguments
+  MOV(R10, R12)
+  SUB(R10, IMM(2))                     //number of formal args to reposition
+L_apply_reposition_formal_args:
+  CMP(R9, R10)
+  JUMP_EQ(L_apply_reposition_formal_args_end)
+  MOV(R13, STACK(R7))
+  MOV(STACK(R8), R13)
+  DECR(R7)
+  DECR(R8)
+  INCR(R9)
+  JUMP(L_apply_reposition_formal_args)
+L_apply_reposition_formal_args_end:
+  //all formal args were repositioned, and R8 is the stack position for unwrapping the optional args list
+  MOV(STARG(1), R4)
+  ADD(STARG(1), R12)
+  SUB(STARG(1), IMM(2))               //subtract 2 for the procedure and optional args list, the number of args has been corrected
+  MOV(R7, R2)                         //R7 is the list of args
+L_apply_unwrap_args:
+  CMP(IND(R7), IMM(T_NIL))
+  JUMP_EQ(L_apply_unwrap_args_end)
+  MOV(R9, INDD(R7, 1))
+  MOV(STACK(R8), R9)
+  DECR(R8)
+  MOV(R7, INDD(R7, 2))
+  JUMP(L_apply_unwrap_args)
+L_apply_unwrap_args_end:
+  MOV(FP, R6)              //set FP to its old value
+  JUMPA(INDD(R1, 2))       //jump to closure's body
+  // NOTE: the following POP(FP), RETURN are a product of the footer generator and will never be executed, since the frame has been overrun to accomodate the procedure that's being applied
+" ^
 exit_apply ^
 enter_less ^
 exit_less ^
@@ -2902,8 +2973,27 @@ let scheme_impls =
       (if (null? lst)
           '()
           (cons (f (car lst))
-                (map f (cdr lst))))))
-";;
+                (map f (cdr lst)))))) ";;
+
+  (* (define map
+    (lambda (f lst . lists)
+      (letrec
+        ((map1 (lambda (f lst)
+                 (cond ((pair? lst)
+                        (cons (f (car lst))
+                          (map1 f (cdr lst))))
+                   ((null? lst) '())
+                   (else "SHIT"))))
+         (empty-sub-list? (lambda (lst)
+                            (and (pair? lst)
+                                 (or (null? (car lst))
+                                 (empty-sub-list? (cdr lst))))))
+         (lsts (cons lst lists)))
+        (if (empty-sub-list? lists)
+            '()
+            (cons (apply f (map1 car lsts))
+              (apply map f (map1 cdr lsts))))))) *)
+(* ;; *)
 
 let compile_scheme_file scm_source_file asm_target_file =
   let file_as_string = scheme_impls ^ (file_to_string scm_source_file) in

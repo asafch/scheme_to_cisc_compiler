@@ -5,7 +5,7 @@
 ;(append '(1) 2)                             ; (1 . 2)
 
 ;apply
-;(apply (lambda (x) x) '("application"))     ; "application"
+(apply (lambda (x y z) (list x y z)) "hello" "world" '("!"))     ; "application"
 ;(apply cons 1 '(2))                         ; (1 . 2)
 ;(apply cons cons '(cons))                   ; (#<procedure cons> . cons)
 ;(define fact-tail
