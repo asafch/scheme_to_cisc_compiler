@@ -2190,7 +2190,11 @@ enter_apply ^
   MOV(R2, STACK(R11))         //the arguments list
   ADD(R11, IMM(1))
   CMP(IND(R2), IMM(T_PAIR))
-  JUMP_NE(EXCEPTION_NOT_A_PAIR)
+  JUMP_EQ(L_apply_has_optional_args)
+  CMP(IND(R2), IMM(T_NIL))
+  JUMP_EQ(L_apply_has_optional_args)
+  JUMP(EXCEPTION_NOT_A_PAIR)
+L_apply_has_optional_args:
   MOV(R4, IMM(0))           //list length counter
   MOV(R5, FPARG(-1))        //return address
   MOV(R6, FPARG(-2))        //old FP
