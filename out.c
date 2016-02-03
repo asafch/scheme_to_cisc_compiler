@@ -6,7 +6,7 @@
 /* change to 0 for no debug info to be printed: */
 #define DO_SHOW 1
 #define MEM_START 2
-#define FREE_VAR_TAB_START (MEM_START + 39)
+#define FREE_VAR_TAB_START (MEM_START + 28)
 #define SYM_TAB_START (FREE_VAR_TAB_START + 46)
 
 #include "cisc.h"
@@ -78,26 +78,22 @@ EXCEPTION_BAD_INDEX:
   HALT
 
 CONTINUE:
-PUSH(IMM(1 + 39))
+PUSH(IMM(1 + 28))
 CALL(MALLOC) //allocate memory for constants
 DROP(1)
-long consts[39] = {T_VOID, T_NIL
+long consts[28] = {T_VOID, T_NIL
 , T_BOOL, 0
 , T_BOOL, 1
-, T_INTEGER, 3
-, T_FRACTION, 4, 7
-, T_INTEGER, 1
+, T_INTEGER, 2
+, T_INTEGER, 5
+, T_FRACTION, 2, 7
+, T_INTEGER, -3
+, T_FRACTION, -1, 17
+, T_FRACTION, 3, 19
 , T_INTEGER, -1
-, T_FRACTION, -1, 2
-, T_FRACTION, 1, 3
-, T_FRACTION, 1, 2
-, T_FRACTION, 1, 6
-, T_FRACTION, 1, 4
-, T_FRACTION, 1, 5
-, T_FRACTION, -1, 3
-, T_FRACTION, -1, 5
+, T_STRING, 1, 't', T_SYMBOL, MEM_START + 23
 };
-memcpy(M(mem) + MEM_START, consts, sizeof(long) * 39);
+memcpy(M(mem) + MEM_START, consts, sizeof(long) * 28);
 
 PUSH(IMM(46))
 CALL(MALLOC) //allocate memory for all free variables in the program
@@ -153,9 +149,16 @@ long freevars[47] = {0
 memcpy(M(mem) + FREE_VAR_TAB_START, freevars + 1, sizeof(long) * 46);
 
 //sym_tab initialization
-
-
-MOV(ADDR(1), IMM(MEM_START + 1))
+long symbols[1 + 2] = {0
+ 	, MEM_START + 26, T_NIL
+};
+PUSH(IMM(2))
+CALL(MALLOC) //allocate memory for the symbol linked list
+DROP(1)
+//in the following memcpy, the source is symbols + 1, because symbols[0] is just a padding 0
+memcpy(M(mem) + SYM_TAB_START, symbols + 1, sizeof(long) * 2);
+//mem[1] holds the address of the first link in the symbols linked list
+MOV(ADDR(1), IMM(FREE_VAR_TAB_START + 46))
 
 
 
@@ -436,6 +439,57 @@ JUMP(L_exit_mul)
 L_mul:
   PUSH(FP)
   MOV(FP, SP)
+  PUSH(IMM(3))
+  CALL(MALLOC)
+  DROP(1)
+  MOV(IND(R0), IMM(T_FRACTION))
+  MOV(INDD(R0, 1), IMM(1))                  //initial value
+  MOV(INDD(R0, 2), IMM(1))
+  MOV(R1, IMM(0))                           //loop counter
+  MOV(R2, FPARG(1))                         //number of iterations
+  MOV(R3, IMM(2))                           //FPARG index of the current argument
+L_mul_loop:
+  CMP(R1, R2)
+  JUMP_EQ(L_mul_loop_end)
+  MOV(R4, FPARG(R3))
+  CMP(IND(R4), IMM(T_INTEGER))
+  JUMP_EQ(L_mul_is_an_integer)
+  CMP(IND(R4), IMM(T_FRACTION))
+  JUMP_NE(EXCEPTION_NOT_A_NUMBER)
+  JUMP(L_mul_is_a_fraction)
+L_mul_is_an_integer:
+  MOV(R5, INDD(R4, 1))                      //number to add
+  MUL(INDD(R0, 1), R5)
+  JUMP(L_mul_after_multiplication)
+L_mul_is_a_fraction:
+  MOV(R5, INDD(R4, 1))
+  MOV(R6, INDD(R4, 2))
+  MUL(INDD(R0, 1), R5)
+  MUL(INDD(R0, 2), R6)
+L_mul_after_multiplication:
+  INCR(R3)
+  INCR(R1)
+  PUSH(R0)
+  PUSH(INDD(R0, 2))
+  PUSH(INDD(R0, 1))
+  CALL(GCD)
+  DROP(2)
+  MOV(R14, R0)
+  POP(R0)
+  DIV(INDD(R0, 1), R14)
+  DIV(INDD(R0, 2), R14)
+  JUMP(L_mul_loop)
+L_mul_loop_end:
+  CMP(INDD(R0, 2), IMM(1))
+  JUMP_NE(L_after_mul)
+  MOV(R7, INDD(R0, 1))
+  PUSH(IMM(2))
+  CALL(MALLOC)
+  DROP(1)
+  MOV(INDD(R0, 0), IMM(T_INTEGER))
+  MOV(INDD(R0, 1), R7)
+L_after_mul:
+
 	POP(FP)
   RETURN
 L_exit_mul:
@@ -3001,10 +3055,8 @@ L_lambda_opt_end_2:
   DROP(1)
 
   L_applic_24:
-	MOV(R0, IMM(MEM_START + 6))
-	PUSH(R0)
-	PUSH(IMM(1))
-	MOV(R0, INDD(FREE_VAR_TAB_START, 8))
+	PUSH(IMM(0))
+	MOV(R0, INDD(FREE_VAR_TAB_START, 7))
 	CMP(R0, T_UNDEFINED)
 	JUMP_EQ(EXCEPTION_UNDEFINED_VARIABLE)
 	CMP(IND(R0), IMM(T_CLOSURE))
@@ -3022,10 +3074,10 @@ L_lapplic_end_24:
   DROP(1)
 
   L_applic_25:
-	MOV(R0, IMM(MEM_START + 8))
+	MOV(R0, IMM(MEM_START + 6))
 	PUSH(R0)
 	PUSH(IMM(1))
-	MOV(R0, INDD(FREE_VAR_TAB_START, 8))
+	MOV(R0, INDD(FREE_VAR_TAB_START, 7))
 	CMP(R0, T_UNDEFINED)
 	JUMP_EQ(EXCEPTION_UNDEFINED_VARIABLE)
 	CMP(IND(R0), IMM(T_CLOSURE))
@@ -3043,12 +3095,12 @@ L_lapplic_end_25:
   DROP(1)
 
   L_applic_26:
-	MOV(R0, IMM(MEM_START + 13))
+	MOV(R0, IMM(MEM_START + 10))
 	PUSH(R0)
-	MOV(R0, IMM(MEM_START + 11))
+	MOV(R0, IMM(MEM_START + 8))
 	PUSH(R0)
 	PUSH(IMM(2))
-	MOV(R0, INDD(FREE_VAR_TAB_START, 8))
+	MOV(R0, INDD(FREE_VAR_TAB_START, 7))
 	CMP(R0, T_UNDEFINED)
 	JUMP_EQ(EXCEPTION_UNDEFINED_VARIABLE)
 	CMP(IND(R0), IMM(T_CLOSURE))
@@ -3066,12 +3118,12 @@ L_lapplic_end_26:
   DROP(1)
 
   L_applic_27:
-	MOV(R0, IMM(MEM_START + 15))
+	MOV(R0, IMM(MEM_START + 13))
 	PUSH(R0)
-	MOV(R0, IMM(MEM_START + 6))
+	MOV(R0, IMM(MEM_START + 13))
 	PUSH(R0)
 	PUSH(IMM(2))
-	MOV(R0, INDD(FREE_VAR_TAB_START, 8))
+	MOV(R0, INDD(FREE_VAR_TAB_START, 7))
 	CMP(R0, T_UNDEFINED)
 	JUMP_EQ(EXCEPTION_UNDEFINED_VARIABLE)
 	CMP(IND(R0), IMM(T_CLOSURE))
@@ -3089,12 +3141,12 @@ L_lapplic_end_27:
   DROP(1)
 
   L_applic_28:
-	MOV(R0, IMM(MEM_START + 21))
-	PUSH(R0)
 	MOV(R0, IMM(MEM_START + 18))
 	PUSH(R0)
+	MOV(R0, IMM(MEM_START + 15))
+	PUSH(R0)
 	PUSH(IMM(2))
-	MOV(R0, INDD(FREE_VAR_TAB_START, 8))
+	MOV(R0, INDD(FREE_VAR_TAB_START, 7))
 	CMP(R0, T_UNDEFINED)
 	JUMP_EQ(EXCEPTION_UNDEFINED_VARIABLE)
 	CMP(IND(R0), IMM(T_CLOSURE))
@@ -3112,12 +3164,12 @@ L_lapplic_end_28:
   DROP(1)
 
   L_applic_29:
-	MOV(R0, IMM(MEM_START + 24))
+	MOV(R0, IMM(MEM_START + 26))
 	PUSH(R0)
-	MOV(R0, IMM(MEM_START + 24))
+	MOV(R0, IMM(MEM_START + 21))
 	PUSH(R0)
 	PUSH(IMM(2))
-	MOV(R0, INDD(FREE_VAR_TAB_START, 8))
+	MOV(R0, INDD(FREE_VAR_TAB_START, 7))
 	CMP(R0, T_UNDEFINED)
 	JUMP_EQ(EXCEPTION_UNDEFINED_VARIABLE)
 	CMP(IND(R0), IMM(T_CLOSURE))
@@ -3128,87 +3180,6 @@ L_lapplic_end_28:
 	POP(R1)
 	DROP(R1)
 L_lapplic_end_29:
-
-
-  PUSH(R0)
-  CALL(WRITE_SOB_IF_NOT_VOID)
-  DROP(1)
-
-  L_applic_30:
-	MOV(R0, IMM(MEM_START + 27))
-	PUSH(R0)
-	MOV(R0, IMM(MEM_START + 27))
-	PUSH(R0)
-	MOV(R0, IMM(MEM_START + 27))
-	PUSH(R0)
-	MOV(R0, IMM(MEM_START + 27))
-	PUSH(R0)
-	PUSH(IMM(4))
-	MOV(R0, INDD(FREE_VAR_TAB_START, 8))
-	CMP(R0, T_UNDEFINED)
-	JUMP_EQ(EXCEPTION_UNDEFINED_VARIABLE)
-	CMP(IND(R0), IMM(T_CLOSURE))
-	JUMP_NE(EXCPETION_APPLYING_NON_PROCEDURE)
-	PUSH(INDD(R0, 1))
-	CALLA(INDD(R0, 2))
-	POP(R1)
-	POP(R1)
-	DROP(R1)
-L_lapplic_end_30:
-
-
-  PUSH(R0)
-  CALL(WRITE_SOB_IF_NOT_VOID)
-  DROP(1)
-
-  L_applic_31:
-	MOV(R0, IMM(MEM_START + 30))
-	PUSH(R0)
-	MOV(R0, IMM(MEM_START + 27))
-	PUSH(R0)
-	MOV(R0, IMM(MEM_START + 18))
-	PUSH(R0)
-	MOV(R0, IMM(MEM_START + 21))
-	PUSH(R0)
-	PUSH(IMM(4))
-	MOV(R0, INDD(FREE_VAR_TAB_START, 8))
-	CMP(R0, T_UNDEFINED)
-	JUMP_EQ(EXCEPTION_UNDEFINED_VARIABLE)
-	CMP(IND(R0), IMM(T_CLOSURE))
-	JUMP_NE(EXCPETION_APPLYING_NON_PROCEDURE)
-	PUSH(INDD(R0, 1))
-	CALLA(INDD(R0, 2))
-	POP(R1)
-	POP(R1)
-	DROP(R1)
-L_lapplic_end_31:
-
-
-  PUSH(R0)
-  CALL(WRITE_SOB_IF_NOT_VOID)
-  DROP(1)
-
-  L_applic_32:
-	MOV(R0, IMM(MEM_START + 36))
-	PUSH(R0)
-	MOV(R0, IMM(MEM_START + 27))
-	PUSH(R0)
-	MOV(R0, IMM(MEM_START + 33))
-	PUSH(R0)
-	MOV(R0, IMM(MEM_START + 21))
-	PUSH(R0)
-	PUSH(IMM(4))
-	MOV(R0, INDD(FREE_VAR_TAB_START, 8))
-	CMP(R0, T_UNDEFINED)
-	JUMP_EQ(EXCEPTION_UNDEFINED_VARIABLE)
-	CMP(IND(R0), IMM(T_CLOSURE))
-	JUMP_NE(EXCPETION_APPLYING_NON_PROCEDURE)
-	PUSH(INDD(R0, 1))
-	CALLA(INDD(R0, 2))
-	POP(R1)
-	POP(R1)
-	DROP(R1)
-L_lapplic_end_32:
 
 
   PUSH(R0)

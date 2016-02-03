@@ -15,13 +15,14 @@ v_applying a variadic lambda on no arguments should return '() and not '(() . ()
 -library functions
 
 v  append (variadic)
-  apply
+v  apply
   < (variadic)
   = (variadic)
   > (variadic)
-  + (variadic)
+v  + (variadic)
   / (variadic)
-  * (variadic)
+v * (variadic)
+v - (variadic)
 v  boolean?
 v  car
 v  cdr

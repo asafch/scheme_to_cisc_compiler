@@ -2346,6 +2346,58 @@ exit_plus ^
 enter_div ^
 exit_div ^
 enter_mul ^
+"
+  PUSH(IMM(3))
+  CALL(MALLOC)
+  DROP(1)
+  MOV(IND(R0), IMM(T_FRACTION))
+  MOV(INDD(R0, 1), IMM(1))                  //initial value
+  MOV(INDD(R0, 2), IMM(1))
+  MOV(R1, IMM(0))                           //loop counter
+  MOV(R2, FPARG(1))                         //number of iterations
+  MOV(R3, IMM(2))                           //FPARG index of the current argument
+L_mul_loop:
+  CMP(R1, R2)
+  JUMP_EQ(L_mul_loop_end)
+  MOV(R4, FPARG(R3))
+  CMP(IND(R4), IMM(T_INTEGER))
+  JUMP_EQ(L_mul_is_an_integer)
+  CMP(IND(R4), IMM(T_FRACTION))
+  JUMP_NE(EXCEPTION_NOT_A_NUMBER)
+  JUMP(L_mul_is_a_fraction)
+L_mul_is_an_integer:
+  MOV(R5, INDD(R4, 1))                      //number to add
+  MUL(INDD(R0, 1), R5)
+  JUMP(L_mul_after_multiplication)
+L_mul_is_a_fraction:
+  MOV(R5, INDD(R4, 1))
+  MOV(R6, INDD(R4, 2))
+  MUL(INDD(R0, 1), R5)
+  MUL(INDD(R0, 2), R6)
+L_mul_after_multiplication:
+  INCR(R3)
+  INCR(R1)
+  PUSH(R0)
+  PUSH(INDD(R0, 2))
+  PUSH(INDD(R0, 1))
+  CALL(GCD)
+  DROP(2)
+  MOV(R14, R0)
+  POP(R0)
+  DIV(INDD(R0, 1), R14)
+  DIV(INDD(R0, 2), R14)
+  JUMP(L_mul_loop)
+L_mul_loop_end:
+  CMP(INDD(R0, 2), IMM(1))
+  JUMP_NE(L_after_mul)
+  MOV(R7, INDD(R0, 1))
+  PUSH(IMM(2))
+  CALL(MALLOC)
+  DROP(1)
+  MOV(INDD(R0, 0), IMM(T_INTEGER))
+  MOV(INDD(R0, 1), R7)
+L_after_mul:
+" ^
 exit_mul ^
 enter_minus ^
 "
