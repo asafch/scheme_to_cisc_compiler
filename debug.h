@@ -4,6 +4,7 @@
   : ((x) == T_BOOL)           ? snprintf(res, 16, "%s", "T_BOOL")                     \
   : ((x) == T_CHAR)           ? snprintf(res, 16, "%s", "T_CHAR")                     \
   : ((x) == T_INTEGER)        ? snprintf(res, 16, "%s", "T_INTEGER")                  \
+  : ((x) == T_FRACTION)        ? snprintf(res, 16, "%s", "T_FRACTION")                  \
   : ((x) == T_STRING)         ? snprintf(res, 16, "%s", "T_STRING")                   \
   : ((x) == T_SYMBOL)         ? snprintf(res, 16, "%s", "T_SYMBOL")                   \
   : ((x) == T_PAIR)           ? snprintf(res, 16, "%s", "T_PAIR")                     \

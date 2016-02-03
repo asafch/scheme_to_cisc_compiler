@@ -2348,6 +2348,114 @@ exit_div ^
 enter_mul ^
 exit_mul ^
 enter_minus ^
+"
+  MOV(R1, FPARG(1))
+  CMP(R1, IMM(0))
+  JUMP_EQ(EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS)
+  PUSH(IMM(3))
+  CALL(MALLOC)
+  DROP(1)
+  MOV(IND(R0), IMM(T_FRACTION))
+  MOV(INDD(R0, 1), IMM(0))                  //initial value
+  MOV(INDD(R0, 2), IMM(0))
+  CMP(R1, IMM(1))
+  JUMP_NE(L_minus_two_args_or_more)
+  MOV(R1, FPARG(2))
+  MOV(R2, INDD(R1, 1))
+  MOV(INDD(R0, 1), R2)
+  MUL(INDD(R0, 1), IMM(-1))
+  MOV(INDD(R0, 2), IMM(1))
+  CMP(INDD(R1, 0), IMM(T_INTEGER))
+  JUMP_EQ(L_minus_loop_end)
+  MOV(R2, INDD(R1, 2))
+  MOV(INDD(R0, 2), R2)
+  JUMP(L_minus_loop_end)
+L_minus_two_args_or_more:
+  MOV(R1, IMM(0))                           //loop counter
+  MOV(R2, FPARG(1))                         //number of iterations
+  MOV(R3, IMM(2))                           //FPARG index of the current argument
+  MOV(R15, IMM(0))                          //a flag marking if addition was made
+L_minus_loop:
+  CMP(R1, R2)
+  JUMP_EQ(L_minus_loop_end)
+  MOV(R4, FPARG(R3))
+  CMP(IND(R4), IMM(T_INTEGER))
+  JUMP_EQ(L_minus_is_an_integer)
+  CMP(IND(R4), IMM(T_FRACTION))
+  JUMP_NE(EXCEPTION_NOT_A_NUMBER)
+  JUMP(L_minus_is_a_fraction)
+L_minus_is_an_integer:
+  CMP(R15, IMM(0))
+  JUMP_NE(L_minus_integer_not_first_subtraction)
+  MOV(R13, INDD(R4, 1))
+  MOV(INDD(R0, 1), R13)
+  MOV(INDD(R0, 2), IMM(1))
+  MOV(R15, IMM(1))
+  INCR(R1)
+  INCR(R3)
+  JUMP(L_minus_loop)
+L_minus_integer_not_first_subtraction:
+  MOV(R5, INDD(R4, 1))                      //number to subtract
+  MOV(R6, INDD(R0, 2))                      //accumulator's denominator
+  MUL(R5, R6)
+  SUB(INDD(R0, 1), R5)
+  JUMP(L_minus_after_addition)
+L_minus_is_a_fraction:
+  CMP(R15, IMM(0))
+  JUMP_NE(L_minus_fraction_not_first_subtraction)
+  MOV(R13, INDD(R4, 1))
+  MOV(INDD(R0, 1), R13)
+  MOV(R13, INDD(R4, 2))
+  MOV(INDD(R0, 2), R13)
+  INCR(R1)
+  INCR(R3)
+  MOV(R15, IMM(1))
+  JUMP(L_minus_loop)
+L_minus_fraction_not_first_subtraction:
+  MOV(R5, INDD(R4, 1))
+  MOV(R6, INDD(R4, 2))
+  MOV(R7, INDD(R0, 1))
+  MOV(R8, INDD(R0, 2))
+  MUL(R7, R6)
+  MUL(R5, R8)
+  SUB(R7, R5)
+  MOV(INDD(R0, 1), R7)
+  MUL(INDD(R0, 2), R6)
+L_minus_after_addition:
+  INCR(R3)
+  INCR(R1)
+  PUSH(R0)
+  PUSH(INDD(R0, 2))
+  PUSH(INDD(R0, 1))
+  CALL(GCD)
+  DROP(2)
+  MOV(R14, R0)
+  POP(R0)
+  DIV(INDD(R0, 1), R14)
+  DIV(INDD(R0, 2), R14)
+  JUMP(L_minus_loop)
+L_minus_loop_end:
+  CMP(INDD(R0, 2), IMM(0))
+  JUMP_EQ(L_minus_no_subtraction)
+  CMP(INDD(R0, 2), IMM(1))
+  JUMP_EQ(L_minus_result_is_integer)
+  JUMP(L_after_minus)
+L_minus_no_subtraction:
+  PUSH(IMM(2))
+  CALL(MALLOC)
+  DROP(1)
+  MOV(INDD(R0, 0), IMM(T_INTEGER))
+  MOV(INDD(R0, 1), IMM(0))
+  JUMP(L_after_minus)
+L_minus_result_is_integer:
+  MOV(R7, INDD(R0, 1))
+  PUSH(IMM(2))
+  CALL(MALLOC)
+  DROP(1)
+  MOV(INDD(R0, 0), IMM(T_INTEGER))
+  MOV(INDD(R0, 1), R7)
+L_after_minus:
+" ^
 exit_minus ^
 enter_boolean ^
 "
