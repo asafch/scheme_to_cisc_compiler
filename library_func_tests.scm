@@ -23,6 +23,7 @@
 ;(apply cons)                                ; exception - wrong number of arguments
 
 ;< (variadic)
+;(< 11)                                      ; #t
 ;(< 1 2)                                     ; #t
 ;(< -1/2 1/121)                              ; #t
 ;(< 3 2)                                     ; #f
@@ -40,7 +41,9 @@
 ;(= 1 '#(1))                                 ; exception - #(1) is not a number
 
 ;> (variadic)
+;(> 11)                                      ; #t
 ;(> 1 2)                                     ; #f
+;(> -1/2 1/121)                              ; #f
 ;(> 3 2)                                     ; #t
 ;(> -3 -2 -1 0 1/2 2/3 3/4)                  ; #f
 ;(>)                                         ; exception - wrong number of arguments
