@@ -2255,6 +2255,71 @@ L_apply_unwrap_args_end:
 " ^
 exit_apply ^
 enter_less ^
+"
+  MOV(R1, FPARG(1))                   //number of arguments
+  CMP(R1, IMM(0))
+  JUMP_EQ(EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS)
+  CMP(R1, IMM(1))
+  JUMP_EQ(L_equal_true)
+  MOV(R2, IMM(1))                     //loop counter
+  MOV(R3, IMM(2))
+  MOV(R4, FPARG(R3))
+  INCR(R3)
+  PUSH(IMM(2))
+  CALL(MALLOC)
+  DROP(1)
+  CMP(IND(R4), IMM(T_INTEGER))
+  JUMP_EQ(L_less_first_arg_is_integer)
+  CMP(IND(R4), IMM(T_FRACTION))
+  JUMP_NE(EXCEPTION_NOT_A_NUMBER)
+  MOV(R5, INDD(R4, 1))                      //previous value's numerator
+  MOV(R6, INDD(R4, 2))                      //previous value's denominator
+  JUMP(L_less_loop)
+L_less_first_arg_is_integer:
+  MOV(R5, INDD(R4, 1))
+  MOV(R6, IMM(1))
+  MOV(R8, IMM(1))
+L_less_loop:
+  CMP(R2, R1)
+  JUMP_EQ(L_less_loop_end)
+  MOV(R4, FPARG(R3))                        //R7 is the current arg to check
+  CMP(IND(R4), IMM(T_INTEGER))
+  JUMP_EQ(L_less_loop_integer)
+  CMP(IND(R4), IMM(T_FRACTION))
+  JUMP_NE(EXCEPTION_NOT_A_NUMBER)
+  MOV(R7, INDD(R4, 1))                      //current value's numerator
+  MOV(R8, INDD(R4, 2))                      //current value's denominator
+  MOV(R9, R5)
+  MOV(R10, R6)
+  MUL(R9, R8)
+  MUL(R10, R7)
+  CMP(R9, R10)
+  JUMP_GE(L_less_false)
+  JUMP(L_less_loop_after_check)
+L_less_loop_integer:
+  MOV(R7, INDD(R4, 1))
+  MOV(R9, R5)
+  MOV(R10, R6)
+  MUL(R10, R7)
+  CMP(R9, R10)
+  JUMP_GE(L_less_false)
+L_less_loop_after_check:
+  INCR(R3)
+  INCR(R2)
+  MOV(R5, R7)
+  CMP(IND(R4), IMM(T_INTEGER))
+  JUMP_EQ(L_less_prev_is_integer)
+  MOV(R6, R8)
+L_less_prev_is_integer:
+  JUMP(L_less_loop)
+L_less_loop_end:
+L_less_true:
+  MOV(R0, IMM(MEM_START + " ^ string_of_int (const_lookup (Bool true) !const_table) ^ "))
+  JUMP(L_less_end)
+L_less_false:
+  MOV(R0, IMM(MEM_START + " ^ string_of_int (const_lookup (Bool false) !const_table) ^ "))
+L_less_end:
+" ^
 exit_less ^
 enter_equal ^
 "

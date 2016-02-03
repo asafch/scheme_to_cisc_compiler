@@ -24,6 +24,7 @@
 
 ;< (variadic)
 ;(< 1 2)                                     ; #t
+;(< -1/2 1/121)                              ; #t
 ;(< 3 2)                                     ; #f
 ;(< -3 -2 -1 0 1/2 2/3 3/4)                  ; #t
 ;(<)                                         ; exception - wrong number of arguments
