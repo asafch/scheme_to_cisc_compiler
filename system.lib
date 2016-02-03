@@ -5,3 +5,4 @@
  */
 
 #include "lib/system/malloc.asm"
+#include "lib/system/gcd.asm"

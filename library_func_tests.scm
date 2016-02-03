@@ -44,18 +44,21 @@
 ;(> 'a 6)                                    ; exception - 'a is not a number
 
 ;+ (variadic)
-;(+)                                         ; 0
-;(+ 1 -1)                                    ; 0
-;(+ 3 -1/2)                                  ; 5/2
+(+)                                         ; 0
+(+ 1 -1)                                    ; 0
+(+ 3 -1/2)                                  ; 5/2
+(+ 1/3 1/2)                                 ; 5/6
+(+ 1/6 1/6)                                 ; 1/3
+(+ 1/4 1/4 1/4 1/4)                         ; 1
 ;(+ 5 'a)                                    ; exception - 'a is not a number
-;(+ 1/3 1/2)                                 ; 5/6
 
 ;/ (variadic)
 ;(/ 1 3)                                     ; 1/3
 ;(/ 4 2)                                     ; 2
 ;(/ 6 -2)                                    ; -3
-;(/)                                         ; exception - wrong number of arguments
 ;(/ 1)                                       ; 1
+;(/ 1 -12)                                   ; -1/12
+;(/)                                         ; exception - wrong number of arguments
 ;(/ 5 #t)                                    ; exception - #t is not a number
 
 ;* (variadic)

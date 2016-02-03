@@ -1319,13 +1319,13 @@ let test_parser string =
   let string' = (Tag_Parser.expression_to_string expr) in
   Printf.printf "%s\n" string';;
 
-(* module type CODE_GEN = sig
+module type CODE_GEN = sig
   val code_gen : expr' -> string
   val compile_scheme_file : string -> string -> unit
-end;; *)
+end;;
 
-(* module Code_Gen : CODE_GEN = struct *)
-module Code_Gen = struct
+module Code_Gen : CODE_GEN = struct
+(* module Code_Gen = struct *)
 
 exception X_why of string;;
 
@@ -1505,11 +1505,11 @@ let code_gen e =
             "\tMOV(R1, FPARG(0))\n" ^
             "\tMOV(R1, INDD(R1, " ^ string_of_int major ^ "))\n" ^
             "\tMOV(INDD(R1, " ^ string_of_int minor ^ "), R0)\n" ^
-            "\tMOV(R0, IMM(MEM_START))  // void\n"
+            "\tMOV(R0, IMM(MEM_START + " ^ string_of_int (const_lookup Void !const_table) ^ "))\n"
         | VarParam' (var, minor)  ->
             new_val ^
             "\tMOV(FPARG(2 + " ^ string_of_int minor ^ "), R0)\n" ^
-            "\tMOV(R0, IMM(MEM_START))  // void\n"
+            "\tMOV(R0, IMM(MEM_START + " ^ string_of_int (const_lookup Void !const_table) ^ "))\n"
         | VarFree' var -> raise (X_why ("Exception: code_gen: trying to box-set free var: " ^ var))
       end
     | If' (test, dit, dif) ->
@@ -1529,6 +1529,7 @@ let code_gen e =
                       ""
     | Set' (Var' v, new_val) ->
       let new_val = run new_val env_size in
+      new_val ^
       begin
         match v with
         | VarParam' (var, minor) ->
@@ -1544,7 +1545,7 @@ let code_gen e =
     | Def' (var, value) ->
       (run value env_size) ^
       "\tMOV(IND(FREE_VAR_TAB_START + " ^ string_of_int (free_var_lookup var !free_var_table) ^ "), R0)\n" ^
-      "\tMOV(R0, IMM(MEM_START))\n"
+      "\tMOV(R0, IMM(MEM_START + " ^ string_of_int (const_lookup Void !const_table) ^ "))\n"
     | Or' exprs' ->
       let (entrance, exit) = make_or_labels () in
       entrance ^ ":\n" ^
@@ -2148,6 +2149,10 @@ EXCEPTION_NOT_AN_INTEGER:
   printf(\"Exception: argument is not an integer\\n\");
   HALT
 
+EXCEPTION_NOT_A_NUMBER:
+  printf(\"Exception: argument is not a number\\n\");
+  HALT
+
 EXCEPTION_NOT_A_STRING:
   printf(\"Exception: argument is not a string\\n\");
   HALT
@@ -2256,6 +2261,87 @@ exit_eqaul ^
 enter_greater ^
 exit_greater ^
 enter_plus ^
+"
+  PUSH(IMM(3))
+  CALL(MALLOC)
+  DROP(1)
+  MOV(IND(R0), IMM(T_FRACTION))
+  MOV(INDD(R0, 1), IMM(0))                  //initial value
+  MOV(INDD(R0, 2), IMM(0))
+  MOV(R1, IMM(0))                           //loop counter
+  MOV(R2, FPARG(1))                         //number of iterations
+  MOV(R3, IMM(2))                           //FPARG index of the current argument
+  MOV(R15, IMM(0))                          //a flag marking if addition was made
+L_plus_loop:
+  CMP(R1, R2)
+  JUMP_EQ(L_plus_loop_end)
+  MOV(R4, FPARG(R3))
+  CMP(IND(R4), IMM(T_INTEGER))
+  JUMP_EQ(L_plus_is_an_integer)
+  CMP(IND(R4), IMM(T_FRACTION))
+  JUMP_NE(EXCEPTION_NOT_A_NUMBER)
+  JUMP(L_plus_is_a_fraction)
+L_plus_is_an_integer:
+  CMP(R15, IMM(0))
+  JUMP_NE(L_plus_integer_not_first_addition)
+  MOV(INDD(R0, 2), IMM(1))
+  MOV(R15, IMM(1))
+L_plus_integer_not_first_addition:
+  MOV(R5, INDD(R4, 1))                      //number to add
+  MOV(R6, INDD(R0, 2))                      //accumulator's denominator
+  MUL(R5, R6)
+  ADD(INDD(R0, 1), R5)
+  JUMP(L_plus_after_addition)
+L_plus_is_a_fraction:
+  CMP(R15, IMM(0))
+  JUMP_NE(L_plus_fraction_not_first_addition)
+  MOV(INDD(R0, 2), IMM(1))
+  MOV(R15, IMM(1))
+L_plus_fraction_not_first_addition:
+  MOV(R5, INDD(R4, 1))
+  MOV(R6, INDD(R4, 2))
+  MOV(R7, INDD(R0, 1))
+  MOV(R8, INDD(R0, 2))
+  MUL(INDD(R0, 2), R6)
+  MUL(R7, R6)
+  MUL(R5, R8)
+  ADD(R7, R5)
+  MOV(INDD(R0, 1), R7)
+L_plus_after_addition:
+  INCR(R3)
+  INCR(R1)
+  PUSH(R0)
+  PUSH(INDD(R0, 2))
+  PUSH(INDD(R0, 1))
+  CALL(GCD)
+  DROP(2)
+  MOV(R14, R0)
+  POP(R0)
+  DIV(INDD(R0, 1), R14)
+  DIV(INDD(R0, 2), R14)
+  JUMP(L_plus_loop)
+L_plus_loop_end:
+  CMP(INDD(R0, 2), IMM(0))
+  JUMP_EQ(L_plus_no_addition)
+  CMP(INDD(R0, 2), IMM(1))
+  JUMP_EQ(L_plus_result_is_integer)
+  JUMP(L_after_plus)
+L_plus_no_addition:
+  PUSH(IMM(2))
+  CALL(MALLOC)
+  DROP(1)
+  MOV(INDD(R0, 0), IMM(T_INTEGER))
+  MOV(INDD(R0, 1), IMM(0))
+  JUMP(L_after_plus)
+L_plus_result_is_integer:
+  MOV(R7, INDD(R0, 1))
+  PUSH(IMM(2))
+  CALL(MALLOC)
+  DROP(1)
+  MOV(INDD(R0, 0), IMM(T_INTEGER))
+  MOV(INDD(R0, 1), R7)
+L_after_plus:
+" ^
 exit_plus ^
 enter_div ^
 exit_div ^
@@ -2973,13 +3059,6 @@ let scheme_impls =
   (define list (lambda s s))
 
   (define map
-    (lambda (f lst)
-      (if (null? lst)
-          '()
-          (cons (f (car lst))
-                (map f (cdr lst)))))) ";;
-
-  (* (define map
     (lambda (f lst . lists)
       (letrec
         ((map1 (lambda (f lst)
@@ -2987,7 +3066,7 @@ let scheme_impls =
                         (cons (f (car lst))
                           (map1 f (cdr lst))))
                    ((null? lst) '())
-                   (else "SHIT"))))
+                   (else \"SHIT\"))))
          (empty-sub-list? (lambda (lst)
                             (and (pair? lst)
                                  (or (null? (car lst))
@@ -2996,8 +3075,8 @@ let scheme_impls =
         (if (empty-sub-list? lists)
             '()
             (cons (apply f (map1 car lsts))
-              (apply map f (map1 cdr lsts))))))) *)
-(* ;; *)
+              (apply map f (map1 cdr lsts)))))))"
+;;
 
 let compile_scheme_file scm_source_file asm_target_file =
   let file_as_string = scheme_impls ^ (file_to_string scm_source_file) in
@@ -3020,18 +3099,3 @@ let compile_scheme_file scm_source_file asm_target_file =
     symbol_table := [];
   end
 end;;
-
-(* #trace Code_Gen.compile_scheme_file;; *)
-(* #trace Code_Gen.const_table_to_string;; *)
-(* #trace Code_Gen.char_to_string;; *)
-(* #trace Code_Gen.measure_const_tab_length;; *)
-(* #trace Code_Gen.make_const_table;; *)
-(* #trace Code_Gen.vector_to_int_list;; *)
-(* #trace Code_Gen.string_to_list_of_chars;; *)
-(* #trace Code_Gen.expand_consts;; *)
-(* #trace Code_Gen.pick_consts;; *)
-(* #trace Code_Gen.purge_duplicates;; *)
-(* #trace Code_Gen.code_gen;; *)
-(* #trace Code_Gen.const_lookup;; *)
-(* #trace Code_Gen.file_to_string;; *)
-(* #trace Code_Gen.string_to_file;; *)
