@@ -20,9 +20,9 @@ v  apply
   = (variadic)
   > (variadic)
 v  + (variadic)
-  / (variadic)
-v * (variadic)
-v - (variadic)
+v  / (variadic)
+v  * (variadic)
+v  - (variadic)
 v  boolean?
 v  car
 v  cdr

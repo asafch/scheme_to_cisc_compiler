@@ -59,6 +59,7 @@
 ;(/ 4 2)                                     ; 2
 ;(/ 6 -2)                                    ; -3
 ;(/ 1)                                       ; 1
+;(/ 7)                                       ; 1/7
 ;(/ 1 -12)                                   ; -1/12
 ;(/)                                         ; exception - wrong number of arguments
 ;(/ 5 #t)                                    ; exception - #t is not a number

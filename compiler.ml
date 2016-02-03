@@ -2344,6 +2344,89 @@ L_after_plus:
 " ^
 exit_plus ^
 enter_div ^
+"
+  CMP(FPARG(1), IMM(0))
+  JUMP_EQ(EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS)
+  PUSH(IMM(3))
+  CALL(MALLOC)
+  DROP(1)
+  MOV(IND(R0), IMM(T_FRACTION))
+  CMP(FPARG(1), IMM(1))
+  JUMP_GT(L_div_two_or_more_args)
+  MOV(R1, FPARG(2))
+  MOV(R2, INDD(R1, 1))
+  MOV(INDD(R0, 2), R2)
+  CMP(IND(R1), IMM(T_INTEGER))
+  JUMP_EQ(L_div_single_arg_integer)
+  MOV(R2, INDD(R1, 2))
+  MOV(INDD(R0, 1), R2)
+L_div_single_arg_integer:
+  MOV(INDD(R0, 1), IMM(1))
+  JUMP(L_div_loop_end)
+L_div_two_or_more_args:
+  MOV(R1, IMM(1))                           //loop counter
+  MOV(R2, FPARG(1))                         //number of iterations
+  MOV(R3, IMM(2))                           //FPARG index of the current argument
+  MOV(R4, FPARG(R3))
+  INCR(R3)
+  CMP(IND(R4), IMM(T_INTEGER))
+  JUMP_EQ(L_div_first_arg_is_int)
+  MOV(R5, INDD(R4, 1))
+  MOV(INDD(R0, 2), R5)
+  MOV(R5, INDD(R4, 2))
+  MOV(INDD(R0, 1), R5)
+  JUMP(L_div_loop)
+L_div_first_arg_is_int:
+  MOV(R4, INDD(R4, 1))
+  MOV(INDD(R0, 1), R4)
+  MOV(INDD(R0, 2), IMM(1))
+L_div_loop:
+  CMP(R1, R2)
+  JUMP_EQ(L_div_loop_end)
+  MOV(R4, FPARG(R3))
+  CMP(IND(R4), IMM(T_INTEGER))
+  JUMP_EQ(L_div_is_an_integer)
+  CMP(IND(R4), IMM(T_FRACTION))
+  JUMP_NE(EXCEPTION_NOT_A_NUMBER)
+  JUMP(L_div_is_a_fraction)
+L_div_is_an_integer:
+  MOV(R5, INDD(R4, 1))                      //divisor
+  MUL(INDD(R0, 2), R5)
+  JUMP(L_div_after_division)
+L_div_is_a_fraction:
+  MOV(R5, INDD(R4, 1))
+  MOV(R6, INDD(R4, 2))
+  MUL(INDD(R0, 1), R6)
+  MUL(INDD(R0, 2), R5)
+L_div_after_division:
+  INCR(R3)
+  INCR(R1)
+  PUSH(R0)
+  PUSH(INDD(R0, 2))
+  PUSH(INDD(R0, 1))
+  CALL(GCD)
+  DROP(2)
+  MOV(R14, R0)
+  POP(R0)
+  DIV(INDD(R0, 1), R14)
+  DIV(INDD(R0, 2), R14)
+  JUMP(L_div_loop)
+L_div_loop_end:
+  CMP(INDD(R0, 2), IMM(0))
+  JUMP_GT(L_div_check_integer_result)
+  MUL(INDD(R0, 1), IMM(-1))
+  MUL(INDD(R0, 2), IMM(-1))
+L_div_check_integer_result:
+  CMP(INDD(R0, 2), IMM(1))
+  JUMP_NE(L_after_div)
+  MOV(R7, INDD(R0, 1))
+  PUSH(IMM(2))
+  CALL(MALLOC)
+  DROP(1)
+  MOV(INDD(R0, 0), IMM(T_INTEGER))
+  MOV(INDD(R0, 1), R7)
+L_after_div:
+" ^
 exit_div ^
 enter_mul ^
 "
