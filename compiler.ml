@@ -2257,6 +2257,52 @@ exit_apply ^
 enter_less ^
 exit_less ^
 enter_equal ^
+"
+  MOV(R1, FPARG(1))                   //number of arguments
+  CMP(R1, IMM(0))
+  JUMP_EQ(EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS)
+  CMP(R1, IMM(1))
+  JUMP_EQ(L_equal_true)
+  MOV(R2, IMM(1))                     //loop counter
+  MOV(R3, IMM(2))
+  MOV(R4, FPARG(R3))
+  INCR(R3)
+  MOV(R5, IND(R4))
+L_equal_loop:
+  CMP(R2, R1)
+  JUMP_EQ(L_equal_loop_end)
+  MOV(R6, FPARG(R3))
+  CMP(IND(R6), IMM(T_INTEGER))
+  JUMP_EQ(L_equal_loop_integer)
+  CMP(IND(R6), IMM(T_FRACTION))
+  JUMP_NE(EXCEPTION_NOT_A_NUMBER)
+  CMP(IND(R6), R5)
+  JUMP_NE(L_equal_false)
+  MOV(R8, INDD(R6, 1))
+  CMP(R8, INDD(R4, 1))
+  JUMP_NE(L_equal_false)
+  MOV(R8, INDD(R4, 2))
+  CMP(R8, INDD(R2, 2))
+  JUMP_NE(L_equal_false)
+  JUMP(L_equal_loop_after_check)
+L_equal_loop_integer:
+  CMP(IND(R6), R5)
+  JUMP_NE(L_equal_false)
+  MOV(R7, INDD(R6, 1))
+  CMP(INDD(R4, 1), R7)
+  JUMP_NE(L_equal_false)
+L_equal_loop_after_check:
+  INCR(R3)
+  INCR(R2)
+  JUMP(L_equal_loop)
+L_equal_loop_end:
+L_equal_true:
+  MOV(R0, IMM(MEM_START + " ^ string_of_int (const_lookup (Bool true) !const_table) ^ "))
+  JUMP(L_equal_end)
+L_equal_false:
+  MOV(R0, IMM(MEM_START + " ^ string_of_int (const_lookup (Bool false) !const_table) ^ "))
+L_equal_end:
+" ^
 exit_eqaul ^
 enter_greater ^
 exit_greater ^

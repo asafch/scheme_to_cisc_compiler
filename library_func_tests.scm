@@ -30,9 +30,11 @@
 ;(< 'a 6)                                    ; exception - 'a is not a number
 
 ;= (variadic)
+;(= 999)                                     ; #t
 ;(= 1 2)                                     ; #f
 ;(= 3 3 3 3 -1)                              ; #f
 ;(= 5 5 5 5 5 5 5 5 5 5 5)                   ; #t
+;(= 2 4/2)                                   ; #t
 ;(=)                                         ; exception - wrong number of arguments
 ;(= 1 '#(1))                                 ; exception - #(1) is not a number
 

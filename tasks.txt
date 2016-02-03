@@ -17,7 +17,7 @@ v_applying a variadic lambda on no arguments should return '() and not '(() . ()
 v  append (variadic)
 v  apply
   < (variadic)
-  = (variadic)
+v  = (variadic)
   > (variadic)
 v  + (variadic)
 v  / (variadic)
