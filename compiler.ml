@@ -3536,15 +3536,15 @@ let scheme_impls =
           ls2
           (cons (car ls1) (append2 (cdr ls1) ls2)))))
 
-  (define accumulate (lambda (f lst init)
-                        (if (null? lst)
-                            init
-                            (f (car lst) (accumulate f (cdr lst) init)))))
+  (define accumulate (lambda (f lst)
+                        (if (null? (cdr lst))
+                            (car lst)
+                            (f (car lst) (accumulate f (cdr lst))))))
 
   (define append (lambda s
                     (cond ((null? s) s)
                           ((null? (cdr s)) (car s))
-                          (else (accumulate append2 s '())))))
+                          (else (accumulate append2 s)))))
 
   (define not
     (lambda (x)
