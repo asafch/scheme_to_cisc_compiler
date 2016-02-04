@@ -1,7 +1,8 @@
 ;append (variadic)
-;(append '(1 2 3) '(4 5 6))                  ; (1 . (2 . (3 . (4 . (5 . (6 . ()))))))
-;(append 'a)                                 ; exception - wrong number of arguments
-;(append 2 1)                                ; exception - l1 not a list
+(append '(1 2 3) '(4 5 6))                  ; (1 . (2 . (3 . (4 . (5 . (6 . ()))))))
+(append '(1 2) '(3 4) '(5 6))               ; (1 . (2 . (3 . (4 . (5 . (6 . ()))))))
+(append 'a)                                 ; a
+(append 2 1)                                ; exception - l1 not a list
 ;(append '(1) 2)                             ; (1 . 2)
 
 ;apply
@@ -313,8 +314,18 @@
 ;(string-set! "wwstring" 0 #\r #\l)          ; excpetion - wrong number of arguments
 
 ;string->symbol
-;(string->symbol 'sym)                       ; exception - not a string
+;'sym
 ;(string->symbol "sym")                      ; sym
+;(string->symbol "freshwithsymbolsinprogram")   ; freshwithsymbolsinprogram
+
+;(eq? (string->symbol (make-string 1 #\a)) 'a)        ; strings should be comparisoned deeply when examining the symbol's string representation
+
+;(define str (symbol->string 'test))
+;(eq? (string->symbol str) 'test)            ; #t
+
+;(string->symbol "fresh")  ; fresh
+
+;(string->symbol 'sym)                       ; exception - not a string
 ;(string->symbol)                            ; excpetion - wrong number of arguments
 ;(string->symbol "str" "sym")                ; excpetion - wrong number of arguments
 

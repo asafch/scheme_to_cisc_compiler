@@ -50,7 +50,7 @@ v  set-cdr!
 v  string-length
 v  string-ref
 v  string-set!
-  string->symbol
+v  string->symbol
 v  string?
 v  symbol?
 v  symbol->string

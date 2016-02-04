@@ -1975,7 +1975,7 @@ let symbol_table_to_string () =
   let sym_tab_length = List.length !symbol_table in
   let new_link index =
     if index = sym_tab_length - 1 then
-      ", T_NIL"
+      ", IMM(MEM_START + " ^ string_of_int (const_lookup Nil !const_table) ^ ")"
     else
       ", SYM_TAB_START + " ^ string_of_int ((1 + index) * 2) in
   "long symbols[1 + " ^ string_of_int ((List.length !symbol_table) * 2) ^ "] = {0\n " ^
@@ -1988,7 +1988,7 @@ let symbol_table_to_string () =
 let make_sym_tab_init_string () =
   "//sym_tab initialization\n" ^
   if List.length !symbol_table = 0 then
-    "\n\nMOV(ADDR(1), IMM(MEM_START + 1))\n\n\n"
+    "\n\nMOV(ADDR(1), IMM(MEM_START + " ^ string_of_int (const_lookup Nil !const_table) ^ "))\n"
   else
     symbol_table_to_string () ^
     "PUSH(IMM(" ^ string_of_int ((List.length !symbol_table) * 2) ^ "))\n" ^
@@ -1997,7 +1997,7 @@ let make_sym_tab_init_string () =
     "//in the following memcpy, the source is symbols + 1, because symbols[0] is just a padding 0\n" ^
     "memcpy(M(mem) + SYM_TAB_START, symbols + 1, sizeof(long) * " ^ string_of_int ((List.length !symbol_table) * 2) ^ ");\n" ^
     "//mem[1] holds the address of the first link in the symbols linked list\n" ^
-    "MOV(ADDR(1), IMM(FREE_VAR_TAB_START + " ^ string_of_int (List.length !free_var_table) ^ "))\n\n\n";;
+    "MOV(ADDR(1), IMM(SYM_TAB_START))\n\n\n";;
 
 let make_free_var_tab_init_string () =
   "long freevars[" ^ string_of_int ((List.length !free_var_table) + 1) ^ "] = {0\n" ^
@@ -3278,6 +3278,74 @@ enter_stringset ^
 " ^
 exit_stringset ^
 enter_stringtosymbol ^
+"
+  MOV(R15, IMM(0))
+  CMP(FPARG(1), IMM(1))
+  JUMP_NE(EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS)
+  MOV(R1, FPARG(2))
+  CMP(IND(R1), IMM(T_STRING))
+  JUMP_NE(EXCEPTION_NOT_A_STRING)
+  MOV(R2, IND(1))                            //prev
+  CMP(IND(R2), IMM(T_NIL))
+  JUMP_NE(L_stringtosymbol_not_first_link)
+  MOV(R15, IMM(1))
+  JUMP(L_stringtosymbol_not_found)
+L_stringtosymbol_not_first_link:
+  MOV(R3, INDD(R2, 1))                        //curr
+L_stringtosymbol_search_loop:
+  CMP(IND(R2), R1)
+  JUMP_EQ(L_stringtosymbol_found)
+  MOV(R4, INDD(R1, 1))                        //input string length
+  MOV(R5, IND(R2))                            //curr symbol
+  MOV(R5, INDD(R5, 1))                        //curr symbol's string representation
+  MOV(R5, INDD(R5, 1))                        //curr symbol's string representation length
+  CMP(R4, R5)
+  JUMP_NE(L_stringtosymbol_next_link)
+  MOV(R6, IMM(2))
+L_stringtosymbol_deep_comparison_loop:
+  CMP(R4, IMM(0))
+  JUMP_EQ(L_stringtosymbol_deep_comparison_loop_end)
+  MOV(R7, INDD(R1, R6))
+  MOV(R8, IND(R2))
+  MOV(R8, INDD(R8, 1))
+  CMP(R7, INDD(R8, R6))
+  JUMP_NE(L_stringtosymbol_next_link)
+  INCR(R6)
+  DECR(R4)
+  JUMP(L_stringtosymbol_deep_comparison_loop)
+L_stringtosymbol_deep_comparison_loop_end:
+  MOV(R0, IND(R2))
+  JUMP(L_stringtosymbol_end)
+L_stringtosymbol_next_link:
+  MOV(R2, R3)
+  MOV(R3, INDD(R3, 1))
+  CMP(IND(R3), IMM(T_NIL))
+  JUMP_EQ(L_stringtosymbol_not_found)
+  JUMP(L_stringtosymbol_search_loop)
+L_stringtosymbol_found:
+  MOV(R0, IND(R2))
+  JUMP(L_stringtosymbol_end)
+L_stringtosymbol_not_found:
+  PUSH(IMM(2))
+  CALL(MALLOC)
+  DROP(1)
+  MOV(R4, R0)
+  MOV(INDD(R4, 0), IMM(T_SYMBOL))
+  MOV(INDD(R4, 1), R1)
+  PUSH(IMM(2))
+  CALL(MALLOC)
+  DROP(1)
+  MOV(R5, R0)
+  MOV(INDD(R5, 0), R4)
+  MOV(INDD(R5, 1), IMM(MEM_START + " ^ string_of_int (const_lookup Nil !const_table) ^ "))
+  MOV(INDD(R2, 1), R5)
+  CMP(R15, IMM(1))
+  JUMP_NE(L_stringtosymbol_not_first_link2)
+  MOV(ADDR(1), R0)
+L_stringtosymbol_not_first_link2:
+  MOV(R0, R4)
+L_stringtosymbol_end:
+" ^
 exit_stringtosymbol ^
 enter_string ^
 "
@@ -3462,12 +3530,21 @@ let epilogue =
 
 let scheme_impls =
 "
-  (define append
-    (lambda (ls1 ls2)
+  (define append2
+    (lambda (ls1  ls2)
       (if (null? ls1)
           ls2
-          (cons (car ls1)
-                (append (cdr ls1) ls2)))))
+          (cons (car ls1) (append2 (cdr ls1) ls2)))))
+
+  (define accumulate (lambda (f lst init)
+                        (if (null? lst)
+                            init
+                            (f (car lst) (accumulate f (cdr lst) init)))))
+
+  (define append (lambda s
+                    (cond ((null? s) s)
+                          ((null? (cdr s)) (car s))
+                          (else (accumulate append2 s '())))))
 
   (define not
     (lambda (x)
