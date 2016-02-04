@@ -1497,8 +1497,7 @@ let code_gen e =
         | VarBound' (var, major, minor) ->
             "\tMOV(R0, FPARG(0))\n" ^
             "\tMOV(R0, INDD(R0, " ^ string_of_int major ^ "))\n" ^
-            "\tMOV(R0, INDD(R0, " ^ string_of_int minor ^ "))\n" ^
-            "\tMOV(R0, IND(R0))\n"
+            "\tMOV(R0, INDD(R0, " ^ string_of_int minor ^ "))\n"
       end
     | BoxSet' (v, new_val) ->
       let new_val = run new_val env_size in
@@ -2123,6 +2122,7 @@ int main()
 
 EXCPETION_APPLYING_NON_PROCEDURE:
   printf(\"Exception: trying to apply a non-procedure\\n\");
+  BP
   HALT
 
 EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS:

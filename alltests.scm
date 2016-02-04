@@ -29,14 +29,13 @@ z                                           ; (1 . (2 . ($ . (4 . ()))))
           (fact-tail (- n 1) (* n acc)))))
 (apply fact-tail 5 '(1))                    ; 120
 (apply fact-tail '(5 1))                    ; 120
-
 (define tail_test
  (lambda (n1)
       ((lambda (n2 n3)
             (+ n1 n3)) 10 15)))
-
-(apply tail_test '(1))
-(apply tail_test '(2))
+(tail_test 1)                               ; 16
+(apply tail_test '(1))                      ; 16
+(apply tail_test '(2))                      ; 17
 ;(apply cons 1 2)                            ; exception - not a proper list
 ;(apply)                                     ; exception - wrong number of arguments
 ;(apply cons)                                ; exception - wrong number of arguments
