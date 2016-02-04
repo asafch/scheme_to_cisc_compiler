@@ -322,7 +322,7 @@ let nt_sexpr =
                                           (pack (caten  nt_improper_list nt_right_paren)
                                                 (fun (sexprs, right_paren) -> sexprs)))
                             (fun (left_paren, sexprs) -> sexprs) in
-        let nt_pair = disj nt_improper_list nt_proper_list in
+        let nt_pair = disj nt_proper_list nt_improper_list in
         (* Vector. *)
         let nt_vector = char '#' in
         let nt_vector = pack (caten (star nt_whitespace) nt_vector) (fun (junk,delim) -> delim) in
@@ -2221,7 +2221,7 @@ L_apply_list_length_end:
   SUB(SP, IMM(3))                     //SP is where it should be after the frame is fixed, subtracting 2 for the procedure and optional args list
   //do not push the old FP back to the stack - it will be pushed at the entry to the procedure's body
   MOV(STARG(-1), R5)                  //set the old return address
-  MOV(STARG(0), INDD(R1, 2))          //set the procedure's environment
+  MOV(STARG(0), INDD(R1, 1))          //set the procedure's environment
   //do not yet set the corrected number of arguments - it can overwrite the first formal argument, if there is one
   //set the corrected number of arguments only after repositioning all formal arguments and unwrapping the optionals list
   MOV(R8, SP)
@@ -3558,24 +3558,19 @@ let scheme_impls =
 
   (define list (lambda s s))
 
+  (define map2 (lambda (f lst)
+                  (if (null? lst)
+                      '()
+                      (cons (f (car lst)) (map f (cdr lst))))))
+
   (define map
-    (lambda (f lst . lists)
-      (letrec
-        ((map1 (lambda (f lst)
-                 (cond ((pair? lst)
-                        (cons (f (car lst))
-                          (map1 f (cdr lst))))
-                   ((null? lst) '())
-                   (else \"SHIT\"))))
-         (empty-sub-list? (lambda (lst)
-                            (and (pair? lst)
-                                 (or (null? (car lst))
-                                 (empty-sub-list? (cdr lst))))))
-         (lsts (cons lst lists)))
-        (if (empty-sub-list? lists)
-            '()
-            (cons (apply f (map1 car lsts))
-              (apply map f (map1 cdr lsts)))))))"
+    (lambda (f . lists)
+      (if (null? (car lists))
+          '()
+          (let ((f_applied_to_cars (apply f (map2 car lists)))
+                (cdrs (map2 cdr lists)))
+            (cons f_applied_to_cars
+                  (apply map (cons f cdrs)))))))"
 ;;
 
 let compile_scheme_file scm_source_file asm_target_file =

@@ -28,6 +28,15 @@
 ;          acc
 ;          (fact-tail (- n 1) (* n acc)))))
 ;(apply fact-tail 5 '(1))                    ; 120
+;(apply fact-tail '(5 1))                    ; 120
+
+;(define tail_test
+; (lambda (n1)
+;      ((lambda (n2 n3)
+;            (+ n1 n2 n3)) 10 15)))
+;(tail_test 1)
+;(apply tail_test '(1))
+
 ;(apply cons 1 2)                            ; exception - not a proper list
 ;(apply)                                     ; exception - wrong number of arguments
 ;(apply cons)                                ; exception - wrong number of arguments
@@ -202,7 +211,7 @@
 ;(make-vector)                               ; excpetion - wrong number of arguments
 
 ;map
-;(map (lambda (s) "batman") '("why" "so" "serious?"))  ; ("batman" . ("batman" . ("batman" . ())))
+(map (lambda (s) "batman") '("why" "so" "serious?"))  ; ("batman" . ("batman" . ("batman" . ())))
 ;(map #f '(1 cons list 'e))                  ; exception - #f is not a procedure
 ;(map (lambda (x) x) '(-1 -2 -3/5))          ; (-1 . (-2 . (-3/5 . ())))
 ;(map (lambda (k) k))                        ; excpetion - wrong number of arguments
