@@ -1,18 +1,18 @@
 ;append (variadic)
-(append '(1 2 3) '(4 5 6))                  ; (1 . (2 . (3 . (4 . (5 . (6 . ()))))))
-(append '(1 2) '(3 4) '(5 6))               ; (1 . (2 . (3 . (4 . (5 . (6 . ()))))))
-(append 'a)                                 ; a
-(append '(1 2 3) '() '(1 2 . 3))            ; (1 . (2 . (3 . (1 . (2 . 3)))))
-
-(define x '(1 2))
-(define y '(3 4))
-(define z (append x y))
-(set-car! x '*)
-(set-car! y '$)
-z                                           ; (1 . (2 . ($ . (4 . ()))))
-
-(append '(1) 2)                             ; (1 . 2)
-(append 2 1)                                ; exception - l1 not a list
+;(append '(1 2 3) '(4 5 6))                  ; (1 . (2 . (3 . (4 . (5 . (6 . ()))))))
+;(append '(1 2) '(3 4) '(5 6))               ; (1 . (2 . (3 . (4 . (5 . (6 . ()))))))
+;(append 'a)                                 ; a
+;(append '(1 2 3) '() '(1 2 . 3))            ; (1 . (2 . (3 . (1 . (2 . 3)))))
+;
+;(define x '(1 2))
+;(define y '(3 4))
+;(define z (append x y))
+;(set-car! x '*)
+;(set-car! y '$)
+;z                                           ; (1 . (2 . ($ . (4 . ()))))
+;
+;(append '(1) 2)                             ; (1 . 2)
+;(append 2 1)                                ; exception - l1 not a list
 
 ;apply
 ;(apply (lambda (x y z) (list x y z)) "hello" "world" '("!"))     ; "application"

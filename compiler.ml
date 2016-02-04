@@ -383,12 +383,16 @@ let nt_sexpr =
     make_rec_sexpr();;
 
 let read_sexpr string =
-     match (nt_sexpr (string_to_list string)) with
+let string = string_to_list string in
+let string = List.filter (fun c -> c != '\r') string in
+     match (nt_sexpr string) with
      | (e,[]) -> e
      | _ -> raise PC.X_no_match;;
 
 let read_sexprs string =
-     match ((star nt_sexpr (string_to_list string)))  with
+  let string = string_to_list string in
+  let string = List.filter (fun c -> c != '\r') string in
+     match ((star nt_sexpr string))  with
      | (e,[]) -> e
      | _ -> raise PC.X_no_match;;
 
