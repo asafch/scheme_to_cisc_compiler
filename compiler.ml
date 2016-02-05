@@ -1171,7 +1171,7 @@ let box_set e =
   | Box' v -> expr'
   | BoxGet' v -> expr'
   | BoxSet' (v, value) -> expr'
-  | If' (test, dit, dif) -> If' (updater test boxed_params, updater dit boxed_params, updater dit boxed_params)
+  | If' (test, dit, dif) -> If' (updater test boxed_params, updater dit boxed_params, updater dif boxed_params)
   | Seq' exprs' ->  Seq' (List.map (fun e -> updater e boxed_params) exprs')
   | Set' (var, value) ->
     begin
@@ -1482,10 +1482,7 @@ let code_gen e =
             "\tPUSH(IMM(1))\n" ^
             "\tCALL(MALLOC)\n" ^
             "\tDROP(1)\n" ^
-            "\tMOV(R1, FPARG(2 + " ^ string_of_int minor ^ "))\n" ^
-            "\tMOV(IND(R0), R1)\n" ^
-            "\tMOV(FPARG(2 + " ^ string_of_int minor ^ "), R0)\n" ^
-            "\tMOV(R0, IMM(MEM_START))  // void\n"
+            "\tMOV(IND(R0), FPARG(2 + " ^ string_of_int minor ^ "))\n"
       end
     | BoxGet' v ->
       begin
@@ -1497,7 +1494,8 @@ let code_gen e =
         | VarBound' (var, major, minor) ->
             "\tMOV(R0, FPARG(0))\n" ^
             "\tMOV(R0, INDD(R0, " ^ string_of_int major ^ "))\n" ^
-            "\tMOV(R0, INDD(R0, " ^ string_of_int minor ^ "))\n"
+            "\tMOV(R0, INDD(R0, " ^ string_of_int minor ^ "))\n" ^
+            "\tMOV(R0, IND(R0))\n"
       end
     | BoxSet' (v, new_val) ->
       let new_val = run new_val env_size in
@@ -1507,11 +1505,13 @@ let code_gen e =
             new_val ^
             "\tMOV(R1, FPARG(0))\n" ^
             "\tMOV(R1, INDD(R1, " ^ string_of_int major ^ "))\n" ^
-            "\tMOV(INDD(R1, " ^ string_of_int minor ^ "), R0)\n" ^
+            "\tMOV(R1, INDD(R1, " ^ string_of_int minor ^ "))\n" ^
+            "\tMOV(IND(R1), R0)\n" ^
             "\tMOV(R0, IMM(MEM_START + " ^ string_of_int (const_lookup Void !const_table) ^ "))\n"
         | VarParam' (var, minor)  ->
             new_val ^
-            "\tMOV(FPARG(2 + " ^ string_of_int minor ^ "), R0)\n" ^
+            "\tMOV(R1, FPARG(2 + " ^ string_of_int minor ^ "))\n" ^
+            "\tMOV(IND(R1), R0)\n" ^
             "\tMOV(R0, IMM(MEM_START + " ^ string_of_int (const_lookup Void !const_table) ^ "))\n"
         | VarFree' var -> raise (X_why ("Exception: code_gen: trying to box-set free var: " ^ var))
       end
@@ -1537,12 +1537,12 @@ let code_gen e =
         match v with
         | VarParam' (var, minor) ->
           "\tMOV(FPARG(2 + " ^ string_of_int minor ^ "), R0)\n" ^
-          "\tMOV(R0, IMM(MEM_START))  // void\n"
+          "\tMOV(R0, IMM(MEM_START + " ^ string_of_int (const_lookup Void !const_table) ^ "))\n"
         | VarBound' (var, major, minor) ->
           "\tMOV(R1, FPARG(0))\n" ^
           "\tMOV(R1, INDD(R1, " ^ string_of_int major ^ "))\n" ^
           "\tMOV(INDD(R1, " ^ string_of_int minor ^ "), R0)\n" ^
-          "\tMOV(R0, IMM(MEM_START))  // void\n"
+          "\tMOV(R0, IMM(MEM_START + " ^ string_of_int (const_lookup Void !const_table) ^ "))\n"
         | VarFree' var -> raise (X_why ("Exception: code_gen: trying to set free var: " ^ var))
       end
     | Def' (var, value) ->
@@ -2122,7 +2122,6 @@ int main()
 
 EXCPETION_APPLYING_NON_PROCEDURE:
   printf(\"Exception: trying to apply a non-procedure\\n\");
-  BP
   HALT
 
 EXCEPTION_WRONG_NUMBER_OF_ARGUMENTS:

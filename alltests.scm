@@ -15,7 +15,7 @@ z                                           ; (1 . (2 . ($ . (4 . ()))))
 ;(append 2 1)                                ; exception - l1 not a list
 
 ;apply
-(apply (lambda (x y z) (list x y z)) "hello" "world" '("!"))     ; "application"
+(apply (lambda (x y z) (list x y z)) "hello" "world" '("!"))     ; ("hello" . ("world" . ("!" . ())))
 (apply (lambda x x) '())                    ; ()
 (apply (lambda x x) 1 '(2))                 ; (1 . (2 . ()))
 (apply (lambda x x) '(2))                   ; (2 . ())
@@ -198,7 +198,7 @@ z                                           ; (1 . (2 . ($ . (4 . ()))))
 (list)                                      ; ()
 
 ;make-string
-(make-string 3)                             ; "\x0;\x0;\x0;"
+(make-string 3)                             ; "\000;\000;\000;"
 (make-string 5 #\r)                         ; "rrrrr"
 ;(make-string #f)                            ; excpetion - #f is not a number
 ;(make-string)                               ; excpetion - wrong number of arguments
@@ -298,8 +298,8 @@ l                                           ; ((4 . (5 . ())) . (2 . (3 . ())))
 ; run the next 5 test together, as they test mutation
 (define l '(1 2 3))                         ; #<void>, print nothing
 (set-cdr! l '(4 5))                         ; #<void>, print nothing
-l                                           ; (1 . (4 . (5 . ())))
-(car l)                                     ; 1
+l                                           ; ((4 . (5 . ())) . (4 . (5 . ())))
+(car l)                                     ; (4 . (5 . ()))
 (cdr l)                                     ; (4 . (5 . ()))
 
 ;string-length
@@ -320,7 +320,7 @@ l                                           ; (1 . (4 . (5 . ())))
 ;(string-ref "string" 1 2)                   ; excpetion - wrong number of arguments
 
 ;string-set!
-(string-set! "string" 1 #\p)                ; #<void>
+(string-set! "string" 1 #\p)                ; #<void>, print nothing
 ;(string-set! "string" 95 #\o)               ; exception - out of bounds
 ;(string-set! "string" -1 #\o)               ; exception - out of bounds
 ;(string-set! "string" 1 "kk")               ; exception - not a char
@@ -386,7 +386,7 @@ l                                           ; (1 . (4 . (5 . ())))
 ;(vector-ref "'#(1 2 3)" 0)                  ; exception - not a vector
 
 ;vector-set!
-(vector-set! '#(4 5 6) 1 7)                 ; #<void>
+(vector-set! '#(4 5 6) 1 7)                 ; #<void>, print nothing
 ;(vector-set! '#(4 5 6) 3 7)                 ; exception - out of bounds
 ;(vector-set! '#(4 5 6) -1 7)                ; exception - out of bounds
 ;(vector-set! "vector" 1 2)                  ; exception - not a vector
@@ -407,3 +407,385 @@ l                                           ; (1 . (4 . (5 . ())))
 (zero? (- 5 (+ 1 2 2)))                    ; #t
 ;(zero?)                                     ; excpetion - wrong number of arguments
 ;(zero? 0 0)                                 ; excpetion - wrong number of arguments
+
+
+"-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*MAYER'S TEST-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*"
+
+"fact-x.scm, should return: 120"
+(define fact
+  (let ((x (lambda (x)
+	     ((x (lambda (x) (lambda (y) (lambda (z) ((x z) (y z))))))
+	      (lambda (x) (lambda (y) x)))))
+	(->
+	 ((lambda (x) (x x))
+	  (lambda (->)
+	    (lambda (n)
+	      (if (zero? n)
+		  (lambda (x) (lambda (y) y))
+		  (let ((z ((-> ->) (- n 1))))
+		    (lambda (x)
+		      (lambda (y)
+			(x ((z x) y)))))))))))
+    (lambda (n)
+      ((((((((x (x (x (x x)))) (((x (x (x (x x)))) ((x (x (x x))) (x
+      (x (x (x x)))))) (((x (x (x (x x)))) ((x (x (x x))) (x (x (x x
+      ))))) (x (x (x (x x))))))) ((x (x (x x))) (x (x (x x))))) ((((
+      (x (x (x (x x)))) (((x (x (x (x x)))) ((x (x (x x))) (x (x (x
+      (x x)))))) (((x (x (x (x x)))) ((x (x (x x))) (x (x (x x)))))
+      (x (x (x (x x))))))) ((x (x (x x))) (x (x (x x))))) (((((x (x
+      (x (x x)))) (((x (x (x (x x)))) ((x (x (x x))) (x (x (x (x x))
+      )))) (((x (x (x (x x)))) ((x (x (x x))) (x (x (x x))))) (x (x
+      (x (x x))))))) ((x (x (x x))) (x (x (x x))))) (((x (x (x (x x)
+      ))) (x (x (x x)))) (x (x (x x))))) (((x (x (x(x x)))) (((((x (
+      x (x (x x)))) ((x (x (x x))) (x (x (x (x x)))))) (x (x (x x)))
+      ) (((x (x (x (x x)))) ((x (x (x x))) (((x(x (x (x x)))) (((x (
+      x (x (x x)))) ((x (x (x x))) (x (x (x (x x)))))) (((x (x (x (x
+      x)))) ((x (x (x x))) (x (x (x x))))) (x(x (x (x x))))))) ((x (
+      x (x x))) (x (x (x x))))))) ((((x (x(x (x x)))) (((x (x (x (x
+      x)))) ((x (x (x x))) (x (x (x (x x)))))) (((x (x (x (x x)))) (
+      (x (x (x x))) (x (x (x x))))) (x(x (x (x x))))))) ((x (x (x x)
+      )) (x (x (x x))))) (((x (x (x (x x)))) (x (x (x x)))) (x (x (x
+      x))))))) (((((x (x (x (x x)))) ((x (x (x x))) (x (x (x (x x)))
+      ))) (x (x (x x)))) ((x (x(x (x x)))) (((x (x (x (x x)))) ((x (
+      x (x x))) (x (x (x (x x)))))) (x (x (x x)))))) (((((x (x (x (x
+      x)))) (((x (x (x (x x)))) ((x (x (x x))) (x (x (x (x x)))))) (
+      ((x (x (x (x x)))) ((x (x (x x))) (x (x (x x))))) (x (x (x (x
+      x))))))) ((x (x (x x))) (x (x (x x))))) (((x (x (x (x x)))) (x
+      (x (x x)))) (x (x (x x))))) (x (x (x x))))))) (((x (x (x (x x)
+      ))) (((((x (x (x (x x)))) ((x (x (x x))) (x (x (x (x x)))))) (
+      x(x (x x)))) (((x(x (x (x x)))) ((x (x (x x))) (x (x (x (x x))
+      )))) (x (x (x x))))) (((((x (x (x (x x)))) (((x (x (x (x x))))
+      ((x (x (x x)))(x (x (x (x x)))))) (((x (x (x (x x)))) ((x (x (
+      x x))) (x (x(x x))))) (x (x (x (x x))))))) ((x (x (x x))) (x (
+      x (x x)))))(((x (x (x (x x)))) (x (x (x x)))) (x (x (x x)))))
+      (x (x (x x)))))) (((((x (x (x (x x)))) (((x (x (x (x x)))) ((x
+      (x (x x)))(x (x (x (x x)))))) (((x (x (x (x x)))) ((x (x (x x)
+      )) (x (x(x x))))) (x (x (x (x x))))))) ((x (x (x x))) (x (x (x
+      x)))))(((x (x (x (x x)))) (x (x (x x)))) (x (x (x x))))) ((x (
+      x (x x))) (((x (x (x (x x)))) (x (x (x x)))) (x (x (x x)))))))
+      )))(((((x (x (x (x x)))) ((x (x (x x))) (((x (x (x (x x)))) ((
+      (x(x (x (x x)))) ((x (x (x x))) (x (x (x (x x)))))) (((x (x (x
+      (x x)))) ((x (x (x x))) (x (x (x x))))) (x (x (x (x x)))))))((
+      x (x (x x))) (x (x (x x))))))) ((((x (x (x (x x)))) (((x (x(x
+      (x x)))) ((x (x (x x))) (x (x (x (x x)))))) (((x (x (x (x x)))
+      )((x (x (x x))) (x (x (x x))))) (x (x (x (x x))))))) ((x(x (x
+      x))) (x (x (x x))))) (((x (x (x (x x)))) (x (x (x x))))(x (x (
+      x x)))))) (((x (x (x (x x)))) (((x (x (x (x x)))) ((x (x (x x)
+      ))(x (x (x (x x)))))) (x (x (x x))))) ((x (x (x x)))(((x (x (x
+      (x x)))) (x (x (x x)))) (x (x (x x))))))) (((x (x(x (x x)))) (
+      ((x (x (x (x x)))) ((x (x (x x))) (x (x (x (x x)))))) (x (x (x
+      x))))) ((x (x (x x))) (((x (x (x (x x)))) (x(x (x x)))) (x (x
+      (x x))))))))) ((x (x (x x))) (((x (x (x (x x)))) (x (x (x x)))
+      )(x (x (x x))))))
+	 (-> n))
+	(lambda (x) (+ x 1))) 0))))
+
+(fact 5)
+
+"test00.scm, should return #t"
+(((((lambda (a)
+      (lambda (b)
+        (((lambda (a) (lambda (b) ((a b) (lambda (x) (lambda (y) y)))))
+	  ((lambda (n)
+	     ((n (lambda (x) (lambda (x) (lambda (y) y))))
+	      (lambda (x) (lambda (y) x))))
+	   (((lambda (a)
+	       (lambda (b)
+		 ((b (lambda (n)
+		       ((lambda (p) (p (lambda (a) (lambda (b) b))))
+			((n (lambda (p)
+			      (((lambda (a)
+				  (lambda (b) (lambda (c) ((c a) b))))
+				((lambda (n)
+				   (lambda (s)
+				     (lambda (z) (s ((n s) z)))))
+				 ((lambda (p)
+				    (p (lambda (a) (lambda (b) a))))
+				  p)))
+			       ((lambda (p)
+				  (p (lambda (a) (lambda (b) a))))
+				p))))
+			 (((lambda (a)
+			     (lambda (b) (lambda (c) ((c a) b))))
+			   (lambda (x) (lambda (y) y)))
+			  (lambda (x) (lambda (y) y)))))))
+		  a)))
+	     a)
+	    b)))
+	 ((lambda (n)
+	    ((n (lambda (x) (lambda (x) (lambda (y) y))))
+	     (lambda (x) (lambda (y) x))))
+	  (((lambda (a)
+	      (lambda (b)
+		((b (lambda (n)
+		      ((lambda (p) (p (lambda (a) (lambda (b) b))))
+		       ((n (lambda (p)
+			     (((lambda (a)
+				 (lambda (b) (lambda (c) ((c a) b))))
+			       ((lambda (n)
+				  (lambda (s)
+				    (lambda (z) (s ((n s) z)))))
+				((lambda (p)
+				   (p (lambda (a) (lambda (b) a))))
+				 p)))
+			      ((lambda (p)
+				 (p (lambda (a) (lambda (b) a))))
+			       p))))
+			(((lambda (a)
+			    (lambda (b) (lambda (c) ((c a) b))))
+			  (lambda (x) (lambda (y) y)))
+			 (lambda (x) (lambda (y) y)))))))
+		 a)))
+	    b)
+	   a)))))
+    ((lambda (n)
+       ((lambda (p) (p (lambda (a) (lambda (b) b))))
+	((n (lambda (p)
+	      (((lambda (a) (lambda (b) (lambda (c) ((c a) b))))
+		((lambda (n) (lambda (s) (lambda (z) (s ((n s) z)))))
+		 ((lambda (p) (p (lambda (a) (lambda (b) a)))) p)))
+	       (((lambda (a)
+		   (lambda (b)
+		     ((b (a (lambda (a)
+			      (lambda (b)
+				((a (lambda (n)
+				      (lambda (s)
+					(lambda (z) (s ((n s) z))))))
+				 b)))))
+		      (lambda (x) (lambda (y) y)))))
+		 ((lambda (p) (p (lambda (a) (lambda (b) a)))) p))
+		((lambda (p) (p (lambda (a) (lambda (b) b)))) p)))))
+	 (((lambda (a) (lambda (b) (lambda (c) ((c a) b))))
+	   (lambda (x) x))
+	  (lambda (x) x)))))
+     (lambda (x) (lambda (y) (x (x (x (x (x y)))))))))
+   (((lambda (a)
+       (lambda (b)
+	 ((b (a (lambda (a)
+		  (lambda (b)
+		    ((a (lambda (n)
+			  (lambda (s) (lambda (z) (s ((n s) z))))))
+		     b)))))
+	  (lambda (x) (lambda (y) y)))))
+     (((lambda (a)
+	 (lambda (b)
+	   ((b (a (lambda (a)
+		    (lambda (b)
+		      ((a (lambda (n)
+			    (lambda (s) (lambda (z) (s ((n s) z))))))
+		       b)))))
+	    (lambda (x) (lambda (y) y)))))
+       ((lambda (x) (lambda (y) (x (x (x y)))))
+	(lambda (x) (lambda (y) (x (x y))))))
+      (lambda (x) (lambda (y) (x (x (x y)))))))
+    (lambda (x) (lambda (y) (x (x (x (x (x y)))))))))
+  #t)
+ #f)
+
+
+"test01.scm, should return #t"
+((lambda (x) (x x 1000000))
+ (lambda (x n)
+   (if (zero? n) #t
+       (x x (- n 1)))))
+
+"test02.scm (revised), should return #t"
+(and
+ (boolean? #t)
+ (boolean? #f)
+ (not (boolean? 1234))
+ (not (boolean? 'a))
+ (symbol? 'b)
+ (procedure? procedure?)
+ (eq? (car '(a b c)) 'a)
+ (= (car (cons 1 2)) 1)
+ (integer? 1234)
+ (char? #\a)
+ (null? '())
+ (string? "abc")
+ (symbol? 'lambda)
+ (vector? '#(1 2 3))
+ (not (vector? 1234))
+ (not (string? '#(a b c)))
+ (not (string? 1234))
+ (= 3 (vector-length '#(a #t ())))
+ (pair? '(a . b))
+ (not (pair? '()))
+ (zero? 0)
+ (not (zero? 234))
+ (= 97 (char->integer (string-ref "abc" 0)))
+ (let ((n 10000))
+   (= n (string-length (make-string n))))
+ (let ((n 10000))
+   (= n (vector-length (make-vector n))))
+ (let ((v '#(a b c)))
+   (eq? 'c (vector-ref v 2)))
+ (= 65 (char->integer #\A))
+ (let ((string (make-string 2)))
+   (string-set! string 0 (integer->char 97))
+   (string-set! string 1 (integer->char 98))
+   (eq? 'ab (string->symbol string)))
+ (= 3 (remainder 7 4))
+ (= 6 (* 1 2 3))
+ (= 1 (*))
+ (= 234 (* 234))
+ (= 6 (+ 1 2 3))
+ (zero? (+))
+ (= 234 (+ 234))
+ (= 1 (- 6 3 2))
+ (< 1 2 3 4 5)
+ (> 5 4 3 2 1)
+ )
+
+"test03.scm, should return #t"
+(define with (lambda (s f) (apply f s)))
+
+(define crazy-ack
+  (letrec ((ack3
+                 (lambda (a b c)
+                         (cond
+                                  ((and (zero? a) (zero? b)) (+ c 1))
+                                         ((and (zero? a) (zero? c)) (ack-x 0 (- b 1) 1))
+                                                ((zero? a) (ack-z 0 (- b 1) (ack-y 0 b (- c 1))))
+                                                       ((and (zero? b) (zero? c)) (ack-x (- a 1) 1 0))
+                                                              ((zero? b) (ack-z (- a 1) 1 (ack-y a 0 (- c 1))))
+                                                                     ((zero? c) (ack-x (- a 1) b (ack-y a (- b 1) 1)))
+                                                                            (else (ack-z (- a 1) b (ack-y a (- b 1) (ack-x a b (- c 1))))))))
+              (ack-x
+                    (lambda (a . bcs)
+                            (with bcs
+                              (lambda (b c)
+                                  (ack3 a b c)))))
+                 (ack-y
+                       (lambda (a b . cs)
+                               (with cs
+                                 (lambda (c)
+                                     (ack3 a b c)))))
+                    (ack-z
+                          (lambda abcs
+                                  (with abcs
+                                    (lambda (a b c)
+                                        (ack3 a b c))))))
+    (lambda ()
+      (and (= 7 (ack3 0 2 2))
+              (= 61 (ack3 0 3 3))
+                 (= 316 (ack3 1 1 5))
+                    (= 636 (ack3 2 0 1))
+                       ))))
+
+(crazy-ack)
+
+"test005.scm, should return #t"
+(((((lambda (x) (x (x x)))
+    (lambda (x)
+      (lambda (y)
+	(x (x y)))))
+   (lambda (p)
+     (p (lambda (x)
+	  (lambda (y)
+	    (lambda (z)
+	      ((z y) x)))))))
+  (lambda (x)
+    ((x #t) #f)))
+ (lambda (x)
+   (lambda (y)
+     x)))
+
+"test07.scm, should return #t"
+(let ((a 1))
+  (let ((b 2) (c 3))
+    (let ((d 4) (e 5) (f 6))
+      (= 720 (* a b c d e f)))))
+
+"test08.scm, should return ((#t . ()) . ((#t . ()) . ((#t . ()) . ())))"
+(let ()
+  ((lambda s
+     (let ()
+       ((lambda s s) s s s)))
+   #t))
+
+"test09.scm, should return (3628800 . (fact-1 . (fact-2 . (fact-3 . (fact-1 . (fact-2 . (fact-3 . (fact-1 . (fact-2 . (fact-3 . (fact-1 . (fact-2 . ()))))))))))))"
+(define with (lambda (s f) (apply f s)))
+
+(define fact-1
+  (lambda (n)
+    (if (zero? n)
+	(list 1 'fact-1)
+	(with (fact-2 (- n 1))
+	  (lambda (r . trail)
+	    (cons (* n r)
+	      (cons 'fact-1 trail)))))))
+
+(define fact-2
+  (lambda (n)
+    (if (zero? n)
+	(list 1 'fact-2)
+	(with (fact-3 (- n 1))
+	  (lambda (r . trail)
+	    (cons (* n r)
+	      (cons 'fact-2 trail)))))))
+
+(define fact-3
+  (lambda (n)
+    (if (zero? n)
+	(list 1 'fact-3)
+	(with (fact-1 (- n 1))
+	  (lambda (r . trail)
+	    (cons (* n r)
+	      (cons 'fact-3 trail)))))))
+(fact-1 10)
+
+"unsorted.scm, should return #f, #t, #t, #f, #t, #t"
+(let ((x #f))
+  (let ()
+    x))
+
+(let ((x #f) (y #t))
+  (let ((x #f))
+    (let ((x #f) (z #f) (t #f))
+      (let ((x #f) (t #f))
+	y))))
+
+;;; example 0
+((((lambda (x)
+     (lambda (y)
+       y))
+   (lambda (p)
+     (p (lambda (x y)
+	  (lambda (p)
+	    (p y x))))))
+  (lambda (z) (z #t #f)))
+ (lambda (x y) x))
+
+((((lambda (x)
+     (lambda (y)
+       (x y)))
+   (lambda (p)
+     (p (lambda (x y)
+	  (lambda (p)
+	    (p y x))))))
+  (lambda (z) (z #t #f)))
+ (lambda (x y) x))
+
+;;; example 1
+((((lambda (x)
+     (lambda (y)
+       (x (x y))))
+   (lambda (p)
+     (p (lambda (x y)
+	  (lambda (p)
+	    (p y x))))))
+  (lambda (z) (z #t #f)))
+ (lambda (x y) x))
+
+;;; example 2
+(((((lambda (x) ((x x) (x x)))
+    (lambda (x)
+      (lambda (y)
+	(x (x y)))))
+   (lambda (p)
+     (p (lambda (x y)
+	  (lambda (p)
+	    (p y x))))))
+  (lambda (z) (z #t #f)))
+ (lambda (x y) x))
