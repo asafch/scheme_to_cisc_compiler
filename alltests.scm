@@ -1,9 +1,8 @@
-;append (variadic)
 (append '(1 2 3) '(4 5 6))                  ; (1 . (2 . (3 . (4 . (5 . (6 . ()))))))
 (append '(1 2) '(3 4) '(5 6))               ; (1 . (2 . (3 . (4 . (5 . (6 . ()))))))
 (append 'a)                                 ; a
 (append '(1 2 3) '() '(1 2 . 3))            ; (1 . (2 . (3 . (1 . (2 . 3)))))
-;
+
 (define x '(1 2))
 (define y '(3 4))
 (define z (append x y))
@@ -213,6 +212,8 @@ z                                           ; (1 . (2 . ($ . (4 . ()))))
 (map (lambda (s) "batman") '("why" "so" "serious?"))  ; ("batman" . ("batman" . ("batman" . ())))
 ;(map #f '(1 cons list 'e))                  ; exception - #f is not a procedure
 (map (lambda (x) x) '(-1 -2 -3/5))          ; (-1 . (-2 . (-3/5 . ())))
+(map + '(1 2 1/3) '(-1 -2 -1/3))            ; (0 . (0 . (0 . ())))
+(map list '("a" "b" "c") '('a 'b 'c) '(1 2 3) '(1/2 1/3 1/4))     ; (("a" . ((quote . (a . ())) . (1 . (1/2 . ())))) . (("b" . ((quote . (b . ())) . (2 . (1/3 . ())))) . (("c" . ((quote . (c . ())) . (3 . (1/4 . ())))) . ())))
 ;(map (lambda (k) k))                        ; excpetion - wrong number of arguments
 
 ;not
@@ -403,7 +404,7 @@ l                                           ; ((4 . (5 . ())) . (4 . (5 . ())))
 ;zero?
 (zero? 0)                                   ; #t
 (zero? 0/3)                                 ; #t
-(zero? #f)                                  ; #f
+;(zero? #f)                                  ; exception - not a number
 (zero? (- 5 (+ 1 2 2)))                    ; #t
 ;(zero?)                                     ; excpetion - wrong number of arguments
 ;(zero? 0 0)                                 ; excpetion - wrong number of arguments

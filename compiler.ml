@@ -1554,7 +1554,7 @@ let code_gen e =
       entrance ^ ":\n" ^
       (List.fold_right (fun e prev ->
                           (run e env_size) ^
-                          "\tCMP(R0, INDD(MEM_START, 3))\n" ^
+                          "\tCMP(R0, IMM(MEM_START + " ^ string_of_int (const_lookup (Bool false) !const_table) ^ "))\n" ^
                           "\tJUMP_NE(" ^ exit ^ ")\n" ^
                           prev
                       )
@@ -3276,6 +3276,7 @@ enter_stringset ^
   ADD(R1, IMM(2))
   CMP(INDD(R2, 0), IMM(T_CHAR))
   JUMP_NE(EXCEPTION_NOT_A_CHAR)
+  MOV(R2, INDD(R2, 1))
   MOV(INDD(R0, R1), R2)
   MOV(R0, IMM(MEM_START + " ^ string_of_int (const_lookup Void !const_table) ^ "))
 " ^
@@ -3491,7 +3492,8 @@ enter_zero ^
   CMP(IND(R0), IMM(T_INTEGER))
   JUMP_EQ(L_check_if_zero)
   CMP(IND(R0), IMM(T_FRACTION))
-  JUMP_NE(L_not_a_zero)
+  JUMP_EQ(L_check_if_zero)
+  JUMP(EXCEPTION_NOT_A_NUMBER)
 L_check_if_zero:
   CMP(INDD(R0, 1), IMM(0))
   JUMP_NE(L_not_a_zero)
@@ -3560,7 +3562,7 @@ let scheme_impls =
   (define map2 (lambda (f lst)
                   (if (null? lst)
                       '()
-                      (cons (f (car lst)) (map f (cdr lst))))))
+                      (cons (f (car lst)) (map2 f (cdr lst))))))
 
   (define map
     (lambda (f . lists)
