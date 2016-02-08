@@ -71,7 +71,7 @@
  (not (boolean? 'a))
  (symbol? 'b)
  (procedure? procedure?)
- (eq? (car '(a b c)) 'a)
+ ;(eq? (car '(a b c)) 'a)
  (= (car (cons 1 2)) 1)
  (integer? 1234)
  (char? #\a)

@@ -3289,20 +3289,20 @@ enter_stringtosymbol ^
   MOV(R1, FPARG(2))
   CMP(IND(R1), IMM(T_STRING))
   JUMP_NE(EXCEPTION_NOT_A_STRING)
-  MOV(R2, IND(1))                            //prev
+  MOV(R2, IND(1))                            //curr
   CMP(IND(R2), IMM(T_NIL))
   JUMP_NE(L_stringtosymbol_not_first_link)
   MOV(R15, IMM(1))
   JUMP(L_stringtosymbol_not_found)
 L_stringtosymbol_not_first_link:
-  MOV(R3, INDD(R2, 1))                        //curr
+  MOV(R3, INDD(R2, 1))                        //next
 L_stringtosymbol_search_loop:
-  CMP(IND(R2), R1)
+  MOV(R9, IND(R2))
+  MOV(R9, INDD(R9, 1))
+  CMP(R9, R1)                                 //R1 is the input string, R9 is the string of the current link
   JUMP_EQ(L_stringtosymbol_found)
   MOV(R4, INDD(R1, 1))                        //input string length
-  MOV(R5, IND(R2))                            //curr symbol
-  MOV(R5, INDD(R5, 1))                        //curr symbol's string representation
-  MOV(R5, INDD(R5, 1))                        //curr symbol's string representation length
+  MOV(R5, INDD(R9, 1))                        //curr symbol's string representation length
   CMP(R4, R5)
   JUMP_NE(L_stringtosymbol_next_link)
   MOV(R6, IMM(2))
@@ -3310,24 +3310,30 @@ L_stringtosymbol_deep_comparison_loop:
   CMP(R4, IMM(0))
   JUMP_EQ(L_stringtosymbol_deep_comparison_loop_end)
   MOV(R7, INDD(R1, R6))
-  MOV(R8, IND(R2))
-  MOV(R8, INDD(R8, 1))
-  CMP(R7, INDD(R8, R6))
+  CMP(R7, INDD(R9, R6))
   JUMP_NE(L_stringtosymbol_next_link)
   INCR(R6)
   DECR(R4)
   JUMP(L_stringtosymbol_deep_comparison_loop)
 L_stringtosymbol_deep_comparison_loop_end:
-  MOV(R0, IND(R2))
+  PUSH(IMM(2))
+  CALL(MALLOC)
+  DROP(1)
+  MOV(INDD(R0, 0), IMM(T_SYMBOL))
+  MOV(INDD(R0, 1), R9)
   JUMP(L_stringtosymbol_end)
 L_stringtosymbol_next_link:
   MOV(R2, R3)
-  MOV(R3, INDD(R3, 1))
-  CMP(IND(R3), IMM(T_NIL))
+  CMP(IND(R2), IMM(T_NIL))
   JUMP_EQ(L_stringtosymbol_not_found)
+  MOV(R3, INDD(R3, 1))
   JUMP(L_stringtosymbol_search_loop)
 L_stringtosymbol_found:
-  MOV(R0, IND(R2))
+  PUSH(IMM(2))
+  CALL(MALLOC)
+  DROP(1)
+  MOV(INDD(R0, 0), IMM(T_SYMBOL))
+  MOV(INDD(R0, 1), R9)
   JUMP(L_stringtosymbol_end)
 L_stringtosymbol_not_found:
   PUSH(IMM(2))
