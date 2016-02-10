@@ -14,11 +14,11 @@
   PUSH(IMM('#'));
   CALL(PUTCHAR);
   MOV(R0, FPARG(0));
-  //PUSH(INDD(R0, 1));
-  //CALL(WRITE_INTEGER);
+  PUSH(INDD(R0, 1));
+  CALL(WRITE_INTEGER);
   PUSH(IMM('('));
   CALL(PUTCHAR);
-  DROP(2);
+  DROP(3);
   MOV(R0, FPARG(0));
   MOV(R1, INDD(R0, 1));
   CMP(R1, IMM(0));

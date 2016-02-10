@@ -211,7 +211,7 @@
 ;(make-vector)                               ; excpetion - wrong number of arguments
 
 ;map
-(map (lambda (s) "batman") '("why" "so" "serious?"))  ; ("batman" . ("batman" . ("batman" . ())))
+;(map (lambda (s) "batman") '("why" "so" "serious?"))  ; ("batman" . ("batman" . ("batman" . ())))
 ;(map #f '(1 cons list 'e))                  ; exception - #f is not a procedure
 ;(map (lambda (x) x) '(-1 -2 -3/5))          ; (-1 . (-2 . (-3/5 . ())))
 ;(map (lambda (k) k))                        ; excpetion - wrong number of arguments
