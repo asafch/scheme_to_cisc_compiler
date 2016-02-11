@@ -1151,6 +1151,9 @@ let contains lst e =
   with
     Not_found -> false
 
+let remove_params params lst =
+  List.filter (fun e -> if contains params e then false else true) lst;;
+
 let box_set e =
   let rec updater expr' boxed_params =
   match expr' with
@@ -1193,12 +1196,12 @@ let box_set e =
                                   exprs')
   | LambdaSimple' (params, body) ->
     begin
-      let body = updater body boxed_params in
+      let body = updater body (remove_params params boxed_params) in
       LambdaSimple' (params, body)
     end
   | LambdaOpt' (params, optional, body) ->
     begin
-      let body = updater body boxed_params in
+      let body = updater body (remove_params ([optional] @ params) boxed_params) in
       LambdaOpt' (params, optional, body)
     end
   | Applic' (operator, operands) -> Applic' (updater operator boxed_params, List.map (fun operand -> updater operand boxed_params)
