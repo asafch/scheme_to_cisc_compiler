@@ -442,7 +442,7 @@ module type TAG_PARSER = sig
 end;; (* signature TAG_PARSER *)
 
 module Tag_Parser : TAG_PARSER = struct
-
+(* module Tag_Parser = struct *)
 open PC;;
 
 let reserved_word_list =
@@ -653,7 +653,8 @@ let contains_illegal_nested_definitions lst =
   in
   check lst;;
 
-(* Pair (Symbol "lambda", Pair (param, body) )*)
+exception X_why of string;;
+
 let clear_nested_definitions body =
   let definitions_hashtbl = Hashtbl.create 50 in
   let body_as_list = scheme_list_to_ocaml_list body in
@@ -690,10 +691,7 @@ let clear_nested_definitions body =
             *)
             let head = clear_defines (scheme_list_to_ocaml_list sexprs) order in
             let tail = clear_defines cdr order in
-            if head != [] then
-              raise X_syntax_error
-            else
-              tail
+            head @ tail
             (* Deal with the 'MIT-syntax for define' in case this is an MIT define.
              this is done simply by convertig the body and args to lambda before
              addig it to our hash tbl.*)
@@ -714,7 +712,7 @@ let clear_nested_definitions body =
     in
   let cleared_body = clear_defines body_as_list (ref(0)) in
   if cleared_body = [] || contains_illegal_nested_definitions cleared_body then
-    raise X_syntax_error
+    raise (X_why "empty body")
   else
     let ribs = get_ribs_from_hashtable definitions_hashtbl in
     (* if the hash table is empty, there were no nested define expressions *)
@@ -3351,7 +3349,7 @@ L_stringtosymbol_not_found:
   MOV(R5, R0)
   MOV(INDD(R5, 0), R4)
   MOV(INDD(R5, 1), IMM(MEM_START + " ^ string_of_int (const_lookup Nil !const_table) ^ "))
-  MOV(INDD(R2, 1), R5)
+  //MOV(INDD(R2, 1), R5)
   CMP(R15, IMM(1))
   JUMP_NE(L_stringtosymbol_not_first_link2)
   MOV(ADDR(1), R0)
