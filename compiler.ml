@@ -2173,6 +2173,10 @@ EXCEPTION_BAD_INDEX:
   printf(\"Exception: argument is not a valid index for access\\n\");
   HALT
 
+EXCEPTION_DIVISION_BY_ZERO:
+  printf(\"Exception: division by zero\\n\");
+  HALT
+
 CONTINUE:
 PUSH(IMM(1 + " ^ string_of_int !const_tab_length ^ "))
 CALL(MALLOC) //allocate memory for constants
@@ -2571,6 +2575,8 @@ L_div_loop:
   JUMP(L_div_is_a_fraction)
 L_div_is_an_integer:
   MOV(R5, INDD(R4, 1))                      //divisor
+  CMP(R5, IMM(0))
+  JUMP_EQ(EXCEPTION_DIVISION_BY_ZERO)
   MUL(INDD(R0, 2), R5)
   JUMP(L_div_after_division)
 L_div_is_a_fraction:
@@ -3349,7 +3355,6 @@ L_stringtosymbol_not_found:
   MOV(R5, R0)
   MOV(INDD(R5, 0), R4)
   MOV(INDD(R5, 1), IMM(MEM_START + " ^ string_of_int (const_lookup Nil !const_table) ^ "))
-  //MOV(INDD(R2, 1), R5)
   CMP(R15, IMM(1))
   JUMP_NE(L_stringtosymbol_not_first_link2)
   MOV(ADDR(1), R0)

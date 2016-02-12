@@ -64,9 +64,3 @@
 
 #;(define v (if #f 1))                      ; void values that result from set!, set-car!, set-cdr! and define should print nothin, but if the void is wrapped in a pair or vector, it should print #<void>. this test should print: (#<void> . (#<void> . (#<void> . ())))
 #;((lambda s s) v v v)
-(define always-zero
-  (letrec ((the-result-is-zero
-	      (lambda (n) (if (< n 0) 0 (does-nothing (- n 1)))))
-	   (does-nothing (lambda (x) (the-result-is-zero x))))
-	the-result-is-zero))
-(always-zero 6)
