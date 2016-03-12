@@ -199,7 +199,7 @@
 ;(list)                                      ; ()
 
 ;make-string
-;(make-string 3)                             ; "\x0;\x0;\x0;"
+(make-string 3)                             ; "\x0;\x0;\x0;"
 ;(make-string 5 #\r)                         ; "rrrrr"
 ;(make-string #f)                            ; excpetion - #f is not a number
 ;(make-string)                               ; excpetion - wrong number of arguments

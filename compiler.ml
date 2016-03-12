@@ -435,14 +435,14 @@ type expr' =
   | ApplicTP' of expr' * (expr' list);;
 exception X_syntax_error;;
 
-module type TAG_PARSER = sig
+(* module type TAG_PARSER = sig
   val read_expression : string -> expr
   val read_expressions : string -> expr list
   val expression_to_string : expr -> string
 end;; (* signature TAG_PARSER *)
 
-module Tag_Parser : TAG_PARSER = struct
-(* module Tag_Parser = struct *)
+module Tag_Parser : TAG_PARSER = struct *)
+module Tag_Parser = struct
 open PC;;
 
 let reserved_word_list =
