@@ -1,6 +1,9 @@
-# Compiler Principles, final project
+# Scheme to CISC compiler
+
+This is part of a 3-part project to create a Scheme-to-CISC compiler, in a compiler principles course taken in BGU. See [part 1](https://github.com/asafch/scheme_to_cisc_part1) and [part 2](https://github.com/asafch/scheme_to_cisc_part2).
 
 The objective of the final project is to create a fully functional compiler, that compiles Scheme code into a mock-up assembly code. This mock-up assembly code is just `C`-macros inside a `.c` file, which is then compiled with `gcc`. The output of the compiled `*.o` file should be the same as the output received in `Chez Scheme` when evaluating the original Scheme code input to the compiler.
+Compiling the output with GCC is mandatory, since the macros rely on GCC's extension that enables jumping to lables in the `C` code.
 
 See [assignment description](http://www.cs.bgu.ac.il/~comp161/wiki.files/final-project.html).
 
