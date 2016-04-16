@@ -12,7 +12,15 @@ The compiler is implemented in [OCaml](https://ocaml.org).
 Parsing Combinators are used in the implementation, and the base PC functionality
 resides in `pc.ml`, which was written by Prof. Mayer Goldberg.
 
-The definition and basic files for using the mock-up assembly are also the work of Prof. Goldberg.
+The definition and basic files for using the mock-up assembly are also the work of Dr. Goldberg.
+
+## Usage
+1. Fire up OCaml, then: `#use compiler.ml;;`
+2. Have your input in some file, say `input.scm`
+3. Compile the input with `Code_Gen.compile_scheme_file “input.scm” “out.c”;;`
+    * NOTE: if you wish to name the output file differently, make sure to update the new name in `makefile`.
+4. Exit OCaml and compile `out.c` with `make`.
+5. Run the compiled `C` file: `./out` and have fun!
 
 ### License
 
