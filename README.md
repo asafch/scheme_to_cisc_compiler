@@ -10,7 +10,7 @@ See [assignment description](http://www.cs.bgu.ac.il/~comp161/wiki.files/final-p
 The compiler is implemented in [OCaml](https://ocaml.org).
 
 Parsing Combinators are used in the implementation, and the base PC functionality
-resides in `pc.ml`, which was written by Prof. Mayer Goldberg.
+resides in `pc.ml`, which was written by Dr. Mayer Goldberg.
 
 The definition and basic files for using the mock-up assembly are also the work of Dr. Goldberg.
 
