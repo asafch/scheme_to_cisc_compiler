@@ -2105,7 +2105,7 @@ let (enter_zero, exit_zero) = make_library_func_string "zero?" in
 #define FREE_VAR_TAB_START (MEM_START + " ^ string_of_int !const_tab_length ^ ")
 #define SYM_TAB_START (FREE_VAR_TAB_START + " ^ string_of_int (List.length !free_var_table) ^ ")
 
-#include \"cisc.h\"
+#include \"cisc/cisc.h\"
 
 int main()
 {

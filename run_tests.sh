@@ -1,4 +1,4 @@
-for f in tests/*.scm; do 
+for f in self_tests/*.scm; do 
   echo "#use \"compiler.ml\";;
   Code_Gen.compile_scheme_file \"$f\" \"out_test.c\";;" | ocaml -stdin
   gcc -o out_test out_test.c
@@ -10,8 +10,8 @@ for f in tests/*.scm; do
   else
     result=`echo "(equal? '$our '$petite)" | petite -q`
   fi
-  
-  if [ "$result" = "#t" ]; then 
+
+  if [ "$result" = "#t" ]; then
       echo "Test $f Passed"
   else
       echo "*** RESULTS DIFFER in $f"
